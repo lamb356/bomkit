@@ -1,0 +1,97 @@
+(kicad_pcb
+  (version 20240108)
+  (generator "bomkit-test")
+  (general (thickness 1.6))
+  (paper "A4")
+  (layers
+    (0 "F.Cu" signal)
+    (31 "B.Cu" signal)
+  )
+  (setup)
+
+  (footprint "R_0402"
+    (layer "F.Cu")
+    (at 10 5 0)
+    (property "Reference" "R1")
+    (property "Value" "10K")
+    (property "LCSC" "C25532")
+    (attr smd)
+  )
+
+  (footprint "R_0402"
+    (layer "F.Cu")
+    (at 12 5 90)
+    (property "Reference" "R2")
+    (property "Value" "10K")
+    (attr smd)
+  )
+
+  (footprint "R_0402"
+    (layer "B.Cu")
+    (at 14 5 180)
+    (property "Reference" "R3")
+    (property "Value" "10K")
+    (attr smd)
+  )
+
+  (footprint "C_0402"
+    (layer "F.Cu")
+    (at 10 8 0)
+    (property "Reference" "C1")
+    (property "Value" "100nF")
+    (property "LCSC" "C1525")
+    (attr smd)
+  )
+
+  (footprint "C_0402"
+    (layer "F.Cu")
+    (at 12 8 270)
+    (property "Reference" "C2")
+    (property "Value" "100nF")
+    (property "LCSC" "C1525")
+    (attr smd exclude_from_bom)
+  )
+
+  (footprint "C_0402"
+    (layer "B.Cu")
+    (at 14 8 90)
+    (property "Reference" "C3")
+    (property "Value" "100nF")
+    (property "LCSC" "C1525")
+    (attr smd exclude_from_board)
+  )
+
+  (footprint "QFP-48"
+    (layer "F.Cu")
+    (at 20 20 45)
+    (property "Reference" "U1")
+    (property "Value" "STM32F411")
+    (property "MPN" "STM32F411CEU6")
+    (attr smd)
+  )
+
+  (footprint "USB-C"
+    (layer "B.Cu")
+    (at 5 20 180)
+    (property "Reference" "J1")
+    (property "Value" "USB-C")
+    (attr through_hole)
+  )
+
+  (footprint "R_0402"
+    (layer "F.Cu")
+    (at 16 5 0)
+    (property "Reference" "R4")
+    (property "Value" "1K")
+    (attr smd dnp)
+  )
+
+  (footprint "LED_0603"
+    (layer "B.Cu")
+    (at 18 12 135)
+    (property "Reference" "LED1")
+    (property "Value" "GREEN")
+    (property "LCSC" "C72043")
+    (attr smd)
+  )
+)
