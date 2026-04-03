@@ -1,0 +1,38 @@
+{
+  "$schema": "https://go.kicad.org/pcm/schemas/v2",
+  "name": "BOMKit Fab",
+  "description": "Generate JLCPCB-ready BOM + CPL with rotation correction",
+  "description_full": "BOMKit Fab is a KiCad pcbnew ActionPlugin for manufacturing handoff. It extracts component data from the active board, opens the BOMKit dialog, exports JLCPCB-ready BOM and CPL files, and applies rotation correction rules from the bundled rotations database.",
+  "identifier": "com.github.lamb356.bomkit-fab",
+  "type": "plugin",
+  "author": {
+    "name": "Carson",
+    "contact": {
+      "web": "https://github.com/lamb356/bomkit"
+    }
+  },
+  "license": "MIT",
+  "resources": {
+    "Source": "https://github.com/lamb356/bomkit",
+    "Readme": "https://github.com/lamb356/bomkit#readme",
+    "Bug Tracker": "https://github.com/lamb356/bomkit/issues"
+  },
+  "tags": [
+    "bom",
+    "cpl",
+    "manufacturing",
+    "jlcpcb",
+    "kicad"
+  ],
+  "versions": [
+    {
+      "version": "0.1.0",
+      "status": "stable",
+      "kicad_version": "8.0",
+      "download_url": "https://github.com/lamb356/bomkit/archive/refs/heads/master.zip",
+      "download_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "download_size": 0,
+      "install_size": 0
+    }
+  ]
+}
