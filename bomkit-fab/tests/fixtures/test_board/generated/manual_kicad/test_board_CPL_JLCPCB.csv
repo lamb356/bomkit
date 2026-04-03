@@ -1,0 +1,10 @@
+Designator,Mid X,Mid Y,Layer,Rotation
+C1,10,8,Top,0
+C2,12,8,Top,270
+J1,5,20,Bottom,180
+LED1,18,12,Bottom,315
+R1,10,5,Top,0
+R2,12,5,Top,90
+R3,14,5,Bottom,180
+R4,16,5,Top,0
+U1,20,20,Top,135

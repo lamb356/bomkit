@@ -56,7 +56,7 @@ bomkit/
 
 When the package is published through KiCad PCM, install `BOMKit Fab` from the Plugin and Content Manager.
 
-### Option 2: Manual install
+### Option 2: Manual install from the repo
 
 Copy or symlink `bomkit-fab/` into your KiCad plugins directory.
 
@@ -66,10 +66,17 @@ Typical KiCad 10 plugin directory on Windows:
 %APPDATA%/kicad/10.0/3rdparty/plugins/
 ```
 
-In WSL on this machine, that corresponds to:
+Typical KiCad 9 plugin directory on Windows:
+
+```text
+%APPDATA%/kicad/9.0/3rdparty/plugins/
+```
+
+In WSL on this machine, those correspond to:
 
 ```text
 /mnt/c/Users/burba/AppData/Roaming/kicad/10.0/3rdparty/plugins/
+/mnt/c/Users/burba/AppData/Roaming/kicad/9.0/3rdparty/plugins/
 ```
 
 Example manual install from the repo root:
@@ -81,6 +88,19 @@ ln -s /mnt/c/Users/burba/bomkit/bomkit-fab \
 ```
 
 If symlinks are inconvenient on Windows, copy the directory instead.
+
+### Option 3: Manual install from packaged zip
+
+A PCM-ready package zip is produced at:
+
+```text
+packages/bomkit-fab-v0.1.0-pcm.zip
+```
+
+To install manually:
+1. unzip the archive
+2. copy the contained `bomkit-fab/` directory into your KiCad `3rdparty/plugins/` directory
+3. restart KiCad and confirm `BOMKit Fab` appears in pcbnew
 
 ## Usage
 
@@ -173,11 +193,11 @@ pytest -q bomkit-fab/tests/test_ui_imports.py
 
 ## Screenshots
 
-Screenshots placeholder for the first real KiCad test pass:
+BOMKit Fab running inside KiCad on the fixture board:
 
-- main dialog screenshot
-- unresolved parts screenshot
-- successful export screenshot
+![BOMKit Fab dialog](docs/assets/bomkit_fab_dialog.png)
+
+This screenshot was captured from a real KiCad run on Windows after loading the fixture board and opening the plugin dialog.
 
 ## Contributing
 

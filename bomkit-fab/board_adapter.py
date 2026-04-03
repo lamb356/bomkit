@@ -107,12 +107,9 @@ def load_from_pcbnew(board: Any) -> list[ComponentData]:
             rotation_deg = 0.0
 
         try:
-            layer = "Bottom" if int(footprint.GetLayer()) == 31 else "Top"
+            layer = _normalize_layer(footprint.GetLayerName())
         except Exception:
-            try:
-                layer = _normalize_layer(footprint.GetLayerName())
-            except Exception:
-                layer = "Top"
+            layer = "Top"
 
         fields: dict[str, str] = {}
         for getter_name in ("GetProperties", "GetFields"):
@@ -123,6 +120,16 @@ def load_from_pcbnew(board: Any) -> list[ComponentData]:
                 raw_fields = getter()
             except Exception:
                 continue
+            # KiCad 9+: GetFields() returns a tuple of PCB_FIELD objects
+            if hasattr(raw_fields, '__iter__'):
+                try:
+                    first = next(iter(raw_fields), None)
+                except Exception:
+                    first = None
+                if first is not None and hasattr(first, 'GetName') and hasattr(first, 'GetText'):
+                    fields = {str(f.GetName()): str(f.GetText()) for f in raw_fields}
+                    break
+            # KiCad 8 / older: GetProperties() returns a dict-like mapping
             try:
                 fields = {str(k): str(v) for k, v in dict(raw_fields).items()}
             except Exception:
@@ -130,6 +137,7 @@ def load_from_pcbnew(board: Any) -> list[ComponentData]:
             if fields:
                 break
 
+        # Prefer boolean API methods (KiCad 9+), but preserve string/list attribute fallback
         attr_tokens: set[str] = set()
         for getter_name in ("GetAttributes", "GetAttr"):
             getter = getattr(footprint, getter_name, None)
@@ -144,13 +152,28 @@ def load_from_pcbnew(board: Any) -> list[ComponentData]:
             elif isinstance(attr_value, (list, tuple, set)):
                 attr_tokens.update(str(item).lower() for item in attr_value)
 
-        is_dnp = attr_tokens.__contains__("dnp") or _bool_from_value(fields.get("DNP"))
-        exclude_from_bom = attr_tokens.__contains__("exclude_from_bom") or _bool_from_value(fields.get("exclude_from_bom"))
-        exclude_from_board = (
-            attr_tokens.__contains__("exclude_from_board")
-            or attr_tokens.__contains__("exclude_from_pos_files")
-            or _bool_from_value(fields.get("exclude_from_board"))
-        )
+        is_dnp_fn = getattr(footprint, 'IsDNP', None)
+        excl_bom_fn = getattr(footprint, 'IsExcludedFromBOM', None)
+        excl_pos_fn = getattr(footprint, 'IsExcludedFromPosFiles', None)
+
+        if callable(is_dnp_fn):
+            is_dnp = bool(is_dnp_fn())
+        else:
+            is_dnp = ("dnp" in attr_tokens) or _bool_from_value(fields.get("DNP"))
+
+        if callable(excl_bom_fn):
+            exclude_from_bom = bool(excl_bom_fn())
+        else:
+            exclude_from_bom = ("exclude_from_bom" in attr_tokens) or _bool_from_value(fields.get("exclude_from_bom"))
+
+        if callable(excl_pos_fn):
+            exclude_from_board = bool(excl_pos_fn())
+        else:
+            exclude_from_board = (
+                ("exclude_from_board" in attr_tokens)
+                or ("exclude_from_pos_files" in attr_tokens)
+                or _bool_from_value(fields.get("exclude_from_board"))
+            )
 
         components.append(
             ComponentData(
