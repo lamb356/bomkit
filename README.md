@@ -8,6 +8,8 @@ BOMKit is a KiCad BOM sourcing and supply-chain suite with three products:
 
 This repository currently focuses on shipping `bomkit-fab` first: a KiCad plugin that generates JLCPCB-ready BOM and CPL files with field normalization, rotation correction, and assembly-cost visibility.
 
+Tested on KiCad 9.0.8 and KiCad 10.0.0.
+
 ## BOMKit Fab
 
 BOMKit Fab is a KiCad ActionPlugin for manufacturing handoff. It reads the currently loaded PCB, resolves LCSC part numbers from common custom-field aliases, applies rotation correction rules, and exports:
