@@ -15,6 +15,9 @@ BOMKit Dashboard is the companion web app for what happens after export:
 - lock decisions you want preserved
 - see JLC Basic / Preferred Extended / Extended fee impact
 
+Live app:
+https://bomkit-dashboard.vercel.app
+
 The motivation is simple: BOM cleanup work is repetitive, and most tools don’t preserve that project-specific knowledge in a lightweight way.
 
 Pricing plan for the MVP:
@@ -25,7 +28,7 @@ Pricing plan for the MVP:
 Current status:
 - MVP code implemented
 - local tests/build passing
-- production deploy pending Vercel re-auth
+- live at https://bomkit-dashboard.vercel.app
 
 Repo:
 https://github.com/lamb356/bomkit

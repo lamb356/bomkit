@@ -14,13 +14,16 @@ This next piece is BOMKit Dashboard:
 - add notes / local offers / locked choices
 - see JLC Basic / Extended loading-fee impact without redoing the same cleanup work each time
 
+Live app:
+https://bomkit-dashboard.vercel.app
+
 The core idea is that BOM work shouldn’t be disposable.
 If you clean up a BOM once, that knowledge should survive the next revision.
 
 Current status:
 - MVP app implemented
 - tests/build passing locally
-- production deploy is the last infrastructure step still being cleaned up
+- live at https://bomkit-dashboard.vercel.app
 
 Repo:
 https://github.com/lamb356/bomkit

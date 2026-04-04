@@ -6,6 +6,9 @@ BOMKit Dashboard MVP — persistent BOM workspace for KiCad
 Body:
 BOMKit Dashboard is the new web companion to BOMKit Fab.
 
+Live app:
+https://bomkit-dashboard.vercel.app
+
 What it does:
 - import BOMKit Fab export CSVs and KiCad Symbol Fields CSVs
 - keep row cleanup decisions, notes, local offers, and locked sourcing choices across revisions
@@ -23,7 +26,7 @@ The point is not just live part lookup. The point is memory. Once you clean up a
 Status:
 - local tests passing
 - local production build passing
-- production Vercel deploy currently blocked by invalid/expired Vercel token and needs re-authentication
+- live at https://bomkit-dashboard.vercel.app
 
 Repo:
 https://github.com/lamb356/bomkit
