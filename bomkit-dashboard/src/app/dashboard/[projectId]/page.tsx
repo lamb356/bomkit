@@ -1,18 +1,24 @@
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 
+import { getCurrentUser } from '@/lib/auth';
 import { BOMSummary } from '@/components/BOMSummary';
 import { BOMTable } from '@/components/BOMTable';
 import { RevisionDiff } from '@/components/RevisionDiff';
-import { getProjectSnapshot } from '@/lib/bom/import';
+import { getOwnedProjectSnapshot } from '@/lib/bom/import';
 
 function exportHref(projectId: number, mode: 'full' | 'jlc') {
   return `/api/bom/${projectId}/export?mode=${mode}`;
 }
 
 export default async function ProjectPage({ params }: { params: Promise<{ projectId: string }> }) {
+  const currentUser = await getCurrentUser();
+  if (!currentUser) {
+    redirect('/api/auth/signin');
+  }
+
   const { projectId } = await params;
-  const snapshot = await getProjectSnapshot(Number(projectId));
+  const snapshot = await getOwnedProjectSnapshot(currentUser.id, Number(projectId));
   if (!snapshot || !snapshot.latestRevision) notFound();
 
   const rows = snapshot.rows.map((row) => ({
