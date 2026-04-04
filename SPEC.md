@@ -35,6 +35,11 @@ Product 3 (Dashboard) SECOND — where the revenue lives.
 
 Product 1 (Parts) THIRD — most ambitious, requires building an HTTP library server.
 
+Important positioning note:
+- BOMKit Fab should be framed as the first wedge, not the whole vision.
+- The long-term product value is not just better final export, but moving sourcing and manufacturability feedback earlier in the workflow.
+- Fab export is the initial trust-building entry point; the broader BOMKit opportunity is process-aware design-to-order support.
+
 ### 1.4 Competitive Position
 
 | Tool | Strength | Fatal Flaw |
@@ -60,6 +65,7 @@ A KiCad pcbnew ActionPlugin that generates manufacturer-ready BOM and CPL files 
 - No schematic editing or symbol assignment
 - No inventory management
 - No ERP/MRP integration
+- No full early-stage process guidance yet — that is part of the broader BOMKit roadmap beyond the initial Fab wedge
 
 ### 2.3 Core Features (MVP — Week 1-2)
 
@@ -182,6 +188,7 @@ External web application that ingests KiCad BOM exports, applies multi-distribut
 - BOM health score
 - Alternate part suggestions
 - JLCPCB assembly optimizer
+- earlier-stage process feedback so sourcing and manufacturability issues can be surfaced before final fab handoff
 
 ### 3.3 Architecture
 
@@ -210,6 +217,23 @@ Persist BOM project metadata, but never persist distributor pricing/stock data.
 - PostgreSQL via Neon
 - NextAuth
 - Stripe billing
+
+-----
+
+## Roadmap Note from Early User Feedback
+
+A useful piece of external feedback is that many sourcing and manufacturability mistakes are already baked in by the time a user reaches BOM/CPL export. That suggests the strongest long-term BOMKit position is not just export automation, but earlier process-aware intervention.
+
+Roadmap implication:
+- keep BOMKit Fab as the first shipping wedge
+- use it to earn trust around export correctness and assembly handoff
+- then move earlier in the workflow with:
+  - BOM health and sourcing risk visibility
+  - alternate-part readiness
+  - approved parts / library workflows
+  - earlier manufacturability warnings before final fab export
+
+This feedback should influence product messaging and prioritization, but it does not invalidate the current build order. It strengthens the rationale for treating Fab as the entry point into a broader design-to-order system.
 
 -----
 

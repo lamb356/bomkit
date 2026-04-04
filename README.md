@@ -3,10 +3,12 @@
 BOMKit is a KiCad BOM sourcing and supply-chain suite with three products:
 
 - `bomkit-fab`: KiCad `pcbnew` plugin for JLCPCB-ready BOM/CPL export
-- `bomkit-dashboard`: web app for live distributor pricing and BOM health
+- `bomkit-dashboard`: persistent BOM workspace with JLC fee intelligence and saved sourcing decisions across revisions
 - `bomkit-parts`: HTTP library server for curated KiCad parts
 
 This repository currently focuses on shipping `bomkit-fab` first: a KiCad plugin that generates JLCPCB-ready BOM and CPL files with field normalization, rotation correction, and assembly-cost visibility.
+
+BOMKit Fab is intentionally the first wedge, not the full end-state. The broader BOMKit direction is a more process-aware sourcing and manufacturing workflow for KiCad: catching part, sourcing, and manufacturability problems earlier in the design cycle instead of only at final export time.
 
 Tested on KiCad 9.0.8 and KiCad 10.0.0.
 
@@ -24,6 +26,30 @@ It also includes:
 - JLCPCB part-library classification and loading-fee estimation
 - a wxPython dialog with sortable/filterable parts view
 - project-level `rotations_custom.csv` overrides
+
+## BOMKit Dashboard
+
+BOMKit Dashboard is the web companion to BOMKit Fab.
+
+What it does:
+- imports BOMKit Fab export CSVs and KiCad Symbol Fields CSVs
+- persists projects, revisions, notes, local offers, and locked choices
+- preserves row cleanup and sourcing decisions across revisions
+- shows JLC Basic / Preferred Extended / Extended tiering and loading-fee impact
+- exports cleaned dashboard CSVs and JLC-ready CSVs on paid tiers
+
+Pricing tiers:
+- Free — 1 project, up to 50 rows, no CSV export
+- Solo — $15/mo, unlimited projects and CSV export
+- Pro — $29/mo, everything in Solo plus future share links
+
+Current deploy status:
+- app code builds successfully locally
+- production Vercel deploy is currently blocked by an invalid/expired Vercel token in the Windows-native environment
+
+How it connects to BOMKit Fab:
+- BOMKit Fab generates the manufacturing handoff files in KiCad
+- BOMKit Dashboard is where those BOMs become persistent, revision-aware workspaces
 
 ## Repository layout
 

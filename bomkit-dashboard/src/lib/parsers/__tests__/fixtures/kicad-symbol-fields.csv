@@ -1,0 +1,4 @@
+Reference;Value;Footprint;MPN;Manufacturer;LCSC Part Number
+"R1,R2";10kΩ;R_0402;RC0402FR-0710KL;Yageo;C25744
+C1;100nF;C_0402;;Murata;C1525
+U1;STM32;QFP-48;STM32F411CEU6;STMicroelectronics;

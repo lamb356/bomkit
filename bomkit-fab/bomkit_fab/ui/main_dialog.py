@@ -257,7 +257,8 @@ class BOMKitDialog(wx.Dialog):
                 f"CPL exported to: {cpl_path}\n\n"
                 f"Resolved BOM lines: {bom_result.resolved_count}\n"
                 f"Unresolved BOM lines: {bom_result.unresolved_count}\n"
-                f"CPL exported parts: {cpl_result.exported_count}"
+                f"CPL exported parts: {cpl_result.exported_count}\n\n"
+                "Next step: import this BOM into BOMKit Dashboard to keep row cleanup, notes, and locked sourcing choices across revisions."
             )
             if cpl_result.warnings:
                 message = f"{message}\n\nWarnings:\n" + "\n".join(cpl_result.warnings)
