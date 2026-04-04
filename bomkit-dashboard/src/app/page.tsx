@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { BarChart3, DatabaseZap, PackageCheck } from 'lucide-react';
 
 import { ImportDialog } from '@/components/ImportDialog';
+import { buildSignInHref } from '@/lib/auth';
 
 const valueProps = [
   {
@@ -42,7 +43,7 @@ export default function HomePage() {
               <Link href="/dashboard" className="rounded-2xl bg-white px-5 py-3 font-semibold text-[#0a0d14] shadow-[0_24px_80px_rgba(255,255,255,0.14)] hover:bg-cyan-100">
                 Open dashboard
               </Link>
-              <a href="/api/auth/signin" className="rounded-2xl border border-white/10 bg-white/5 px-5 py-3 font-medium text-zinc-200 hover:border-cyan-400/40 hover:bg-cyan-400/10 hover:text-white">
+              <a href={buildSignInHref('/dashboard')} className="rounded-2xl border border-white/10 bg-white/5 px-5 py-3 font-medium text-zinc-200 hover:border-cyan-400/40 hover:bg-cyan-400/10 hover:text-white">
                 Sign in with GitHub
               </a>
             </div>

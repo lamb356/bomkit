@@ -30,6 +30,32 @@ export class AuthRequiredError extends Error {
   }
 }
 
+const DEFAULT_CALLBACK_PATH = '/dashboard';
+
+export function normalizeCallbackUrl(callbackUrl?: string | null): string {
+  if (!callbackUrl) return DEFAULT_CALLBACK_PATH;
+  if (callbackUrl.startsWith('/')) return callbackUrl;
+
+  try {
+    const baseUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL;
+    const parsed = new URL(callbackUrl);
+    if (baseUrl && parsed.origin === new URL(baseUrl).origin) {
+      return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+    }
+  } catch {
+    // Fall through to default callback path.
+  }
+
+  return DEFAULT_CALLBACK_PATH;
+}
+
+export function buildSignInHref(callbackUrl?: string | null): string {
+  const target = normalizeCallbackUrl(callbackUrl);
+  return target === DEFAULT_CALLBACK_PATH
+    ? '/signin'
+    : `/signin?callbackUrl=${encodeURIComponent(target)}`;
+}
+
 export const authOptions: NextAuthOptions = {
   session: { strategy: 'jwt' },
   providers: [
@@ -38,12 +64,32 @@ export const authOptions: NextAuthOptions = {
       clientSecret: process.env.GITHUB_SECRET || 'missing-github-secret',
     }),
   ],
+  pages: {
+    signIn: '/signin',
+    error: '/signin',
+  },
   callbacks: {
     async session({ session, token }) {
       if (session.user && token.sub) {
         (session.user as { id?: string }).id = token.sub;
       }
       return session;
+    },
+    async redirect({ url, baseUrl }) {
+      if (url.startsWith('/')) {
+        return `${baseUrl}${url}`;
+      }
+
+      try {
+        const parsed = new URL(url);
+        if (parsed.origin === baseUrl) {
+          return url;
+        }
+      } catch {
+        // Ignore invalid redirect targets.
+      }
+
+      return baseUrl;
     },
   },
 };

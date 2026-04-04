@@ -3,6 +3,7 @@ import { Geist_Mono, Inter } from 'next/font/google';
 import Link from 'next/link';
 
 import './globals.css';
+import { buildSignInHref } from '@/lib/auth';
 
 const inter = Inter({ variable: '--font-inter', subsets: ['latin'] });
 const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] });
@@ -27,7 +28,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             </Link>
             <nav className="flex items-center gap-2 text-sm text-zinc-400">
               <Link href="/dashboard" className="rounded-lg px-3 py-2 transition hover:bg-white/5 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70">Projects</Link>
-              <a href="/api/auth/signin" className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 font-medium text-zinc-200 transition hover:border-cyan-400/40 hover:bg-cyan-400/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70">Sign in</a>
+              <a href={buildSignInHref('/dashboard')} className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 font-medium text-zinc-200 transition hover:border-cyan-400/40 hover:bg-cyan-400/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70">Sign in</a>
             </nav>
           </div>
         </header>

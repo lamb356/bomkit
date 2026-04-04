@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray } from 'drizzle-orm';
+import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 
 import { classifyJlcPart } from '@/lib/jlc/classifier';
 import { db } from '@/lib/db/client';
@@ -29,6 +29,13 @@ interface HistoricalRow extends DiffableRow {
   lockedChoice?: typeof lockedChoices.$inferSelect | null;
 }
 
+export class ProjectLimitError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ProjectLimitError';
+  }
+}
+
 async function loadClassifications() {
   const cachedParts = await db.select().from(jlcPartsCache);
   return new Map(cachedParts.map((row) => [row.lcscPart, {
@@ -42,6 +49,30 @@ async function loadClassifications() {
 export async function getOwnedProject(userId: string, projectId: number) {
   return db.query.projects.findFirst({
     where: and(eq(projects.id, projectId), eq(projects.userId, userId)),
+  });
+}
+
+export async function createProjectForUser(params: {
+  userId: string;
+  projectName: string;
+  maxProjects?: number | null;
+}) {
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${params.userId}))`);
+
+    if (params.maxProjects != null) {
+      const existing = await tx.select({ id: projects.id }).from(projects).where(eq(projects.userId, params.userId));
+      if (existing.length >= params.maxProjects) {
+        throw new ProjectLimitError(`Free tier is limited to ${params.maxProjects} project. Upgrade to Solo for unlimited projects.`);
+      }
+    }
+
+    const inserted = await tx.insert(projects).values({
+      userId: params.userId,
+      name: params.projectName,
+    }).returning();
+
+    return inserted[0]!;
   });
 }
 
@@ -72,13 +103,17 @@ export async function importBomCsv(params: {
   input: string;
   filename: string;
   existingProjectId?: number;
+  maxProjects?: number | null;
 }): Promise<{ projectId: number; revisionId: number; version: number; diffSummary: { added: number; removed: number; changed: number } }> {
   const parsedRows = await parseInputCsv(params.input);
   let project = params.existingProjectId ? await getOwnedProject(params.userId, params.existingProjectId) : null;
 
   if (!project) {
-    const inserted = await db.insert(projects).values({ userId: params.userId, name: params.projectName }).returning();
-    project = inserted[0]!;
+    project = await createProjectForUser({
+      userId: params.userId,
+      projectName: params.projectName,
+      maxProjects: params.maxProjects,
+    });
   }
 
   const latestRevision = await db.query.bomRevisions.findFirst({

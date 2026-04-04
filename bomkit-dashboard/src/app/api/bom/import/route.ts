@@ -1,11 +1,8 @@
-import { eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
 import { AuthRequiredError } from '@/lib/auth';
 import { getCurrentBillingState, projectLimitForTier, rowLimitForTier } from '@/lib/billing';
-import { getOwnedProject, importBomCsv, parseInputCsv } from '@/lib/bom/import';
-import { db } from '@/lib/db/client';
-import { projects } from '@/lib/db/schema';
+import { getOwnedProject, importBomCsv, parseInputCsv, ProjectLimitError } from '@/lib/bom/import';
 
 export async function POST(request: Request) {
   try {
@@ -31,12 +28,6 @@ export async function POST(request: Request) {
       if (!ownedProject) {
         return NextResponse.json({ error: 'project not found' }, { status: 404 });
       }
-    } else {
-      const existingProjects = await db.select().from(projects).where(eq(projects.userId, user.id));
-      const projectLimit = projectLimitForTier(tier);
-      if (projectLimit != null && existingProjects.length >= projectLimit) {
-        return NextResponse.json({ error: `Free tier is limited to ${projectLimit} project. Upgrade to Solo for unlimited projects.` }, { status: 403 });
-      }
     }
 
     const result = await importBomCsv({
@@ -45,12 +36,16 @@ export async function POST(request: Request) {
       input,
       filename: file.name,
       existingProjectId: existingProjectId ? Number(existingProjectId) : undefined,
+      maxProjects: projectLimitForTier(tier),
     });
 
     return NextResponse.json({ ...result, billingTier: tier });
   } catch (error) {
     if (error instanceof AuthRequiredError) {
       return NextResponse.json({ error: error.message }, { status: 401 });
+    }
+    if (error instanceof ProjectLimitError) {
+      return NextResponse.json({ error: error.message }, { status: 403 });
     }
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Import failed' }, { status: 500 });
   }

@@ -2,17 +2,17 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { BillingActions } from '@/components/BillingActions';
-import { getCurrentUser } from '@/lib/auth';
+import { buildSignInHref, getCurrentUser } from '@/lib/auth';
 import { getCurrentBillingState, getPriceIdForTier } from '@/lib/billing';
 import { getOwnedProject } from '@/lib/bom/import';
 
 export default async function ProjectSettingsPage({ params }: { params: Promise<{ projectId: string }> }) {
+  const { projectId } = await params;
   const currentUser = await getCurrentUser();
   if (!currentUser) {
-    redirect('/api/auth/signin');
+    redirect(buildSignInHref(`/dashboard/${projectId}/settings`));
   }
 
-  const { projectId } = await params;
   const project = await getOwnedProject(currentUser.id, Number(projectId));
   if (!project) {
     redirect('/dashboard');

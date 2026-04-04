@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 
 import { ProjectCard } from '@/components/ProjectCard';
-import { getCurrentUser } from '@/lib/auth';
+import { buildSignInHref, getCurrentUser } from '@/lib/auth';
 import { getCurrentBillingState } from '@/lib/billing';
 import { getOwnedProjectSnapshot } from '@/lib/bom/import';
 import { db } from '@/lib/db/client';
@@ -18,7 +18,7 @@ function tierCopy(tier: string): string {
 export default async function DashboardProjectsPage({ searchParams }: { searchParams?: Promise<{ checkout?: string }> }) {
   const currentUser = await getCurrentUser();
   if (!currentUser) {
-    redirect('/api/auth/signin');
+    redirect(buildSignInHref('/dashboard'));
   }
 
   const { user, tier } = await getCurrentBillingState();

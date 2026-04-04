@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 
-import { getCurrentUser } from '@/lib/auth';
+import { buildSignInHref, getCurrentUser } from '@/lib/auth';
 import { BOMSummary } from '@/components/BOMSummary';
 import { BOMTable } from '@/components/BOMTable';
 import { RevisionDiff } from '@/components/RevisionDiff';
@@ -12,12 +12,12 @@ function exportHref(projectId: number, mode: 'full' | 'jlc') {
 }
 
 export default async function ProjectPage({ params }: { params: Promise<{ projectId: string }> }) {
+  const { projectId } = await params;
   const currentUser = await getCurrentUser();
   if (!currentUser) {
-    redirect('/api/auth/signin');
+    redirect(buildSignInHref(`/dashboard/${projectId}`));
   }
 
-  const { projectId } = await params;
   const snapshot = await getOwnedProjectSnapshot(currentUser.id, Number(projectId));
   if (!snapshot || !snapshot.latestRevision) notFound();
 
