@@ -5,12 +5,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-try:
-    from .board_adapter import ComponentData
-    from .field_resolver import resolve_lcsc
-except ImportError:  # pragma: no cover
-    from board_adapter import ComponentData
-    from field_resolver import resolve_lcsc
+from bomkit_fab.board_adapter import ComponentData
+from bomkit_fab.field_resolver import resolve_lcsc
 
 
 @dataclass(slots=True)

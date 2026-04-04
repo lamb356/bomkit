@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-try:
-    from .board_adapter import ComponentData
-except ImportError:  # pragma: no cover
+if TYPE_CHECKING:
+    from bomkit_fab.board_adapter import ComponentData
+else:
     ComponentData = Any  # type: ignore
 
 

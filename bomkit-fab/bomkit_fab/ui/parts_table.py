@@ -5,10 +5,13 @@ from functools import cmp_to_key
 from typing import Any
 import webbrowser
 
-try:
+import importlib.util
+
+wx_spec = importlib.util.find_spec("wx")
+if wx_spec is not None:
     import wx  # type: ignore
     WX_AVAILABLE = True
-except ImportError:  # pragma: no cover
+else:  # pragma: no cover
     WX_AVAILABLE = False
 
     class _WxObject:
@@ -127,12 +130,8 @@ except ImportError:  # pragma: no cover
 
     wx = _WxModule()  # type: ignore
 
-try:
-    from ..field_resolver import resolve_lcsc
-    from ..jlcpcb_classifier import classify
-except ImportError:  # pragma: no cover
-    from field_resolver import resolve_lcsc
-    from jlcpcb_classifier import classify
+from bomkit_fab.field_resolver import resolve_lcsc
+from bomkit_fab.jlcpcb_classifier import classify
 
 
 STATUS_ALL = "All"

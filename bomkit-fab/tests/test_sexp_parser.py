@@ -1,25 +1,10 @@
 from __future__ import annotations
 
-import importlib.util
-import sys
 from pathlib import Path
 
+from bomkit_fab import board_adapter, sexp_parser
 
-BASE_DIR = Path(__file__).resolve().parents[1]
 FIXTURE_PATH = Path(__file__).resolve().parent / "fixtures" / "test_board.kicad_pcb"
-
-
-def _load_module(module_name: str, path: Path):
-    spec = importlib.util.spec_from_file_location(module_name, path)
-    module = importlib.util.module_from_spec(spec)
-    assert spec is not None and spec.loader is not None
-    sys.modules[module_name] = module
-    spec.loader.exec_module(module)
-    return module
-
-
-sexp_parser = _load_module("sexp_parser", BASE_DIR / "sexp_parser.py")
-board_adapter = _load_module("board_adapter", BASE_DIR / "board_adapter.py")
 
 
 def test_parse_kicad_pcb_extracts_components_and_flags():

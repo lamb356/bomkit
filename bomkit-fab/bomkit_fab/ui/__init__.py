@@ -1,5 +1,5 @@
-from .main_dialog import BOMKitDialog, DialogSummary, WX_AVAILABLE as DIALOG_WX_AVAILABLE
-from .parts_table import (
+from bomkit_fab.ui.main_dialog import BOMKitDialog, DialogSummary, WX_AVAILABLE as DIALOG_WX_AVAILABLE
+from bomkit_fab.ui.parts_table import (
     PartsTable,
     PartsTableRow,
     STATUS_ALL,

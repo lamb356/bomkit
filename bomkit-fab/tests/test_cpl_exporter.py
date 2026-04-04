@@ -1,34 +1,17 @@
 from __future__ import annotations
 
 import csv
-import importlib.util
 import re
-import sys
 from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parents[1]
+from bomkit_fab import board_adapter, cpl_exporter, rotations
+
 FIXTURE_PATH = Path(__file__).resolve().parent / 'fixtures' / 'test_board.kicad_pcb'
-if str(BASE_DIR) not in sys.path:
-    sys.path.insert(0, str(BASE_DIR))
-
-
-def _load_module(module_name: str, path: Path):
-    spec = importlib.util.spec_from_file_location(module_name, path)
-    module = importlib.util.module_from_spec(spec)
-    assert spec is not None and spec.loader is not None
-    sys.modules[module_name] = module
-    spec.loader.exec_module(module)
-    return module
-
-
-board_adapter = _load_module('board_adapter_task6', BASE_DIR / 'board_adapter.py')
-rotations = _load_module('rotations_task6', BASE_DIR / 'rotations.py')
-cpl_exporter = _load_module('cpl_exporter_task6', BASE_DIR / 'cpl_exporter.py')
 
 
 def test_export_cpl_writes_expected_columns_filters_board_exclusions_and_applies_rotations(tmp_path):
     components = board_adapter.load_from_file(str(FIXTURE_PATH))
-    rules = rotations.load_rotations(BASE_DIR / 'rotations.csv')
+    rules = rotations.load_rotations(Path(__file__).resolve().parents[1] / 'rotations.csv')
     output = tmp_path / 'board_CPL_JLCPCB.csv'
 
     result = cpl_exporter.export_cpl(components, output, rules)

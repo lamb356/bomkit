@@ -5,9 +5,14 @@ import importlib.util
 import sys
 from pathlib import Path
 
-try:
+PACKAGE_ROOT = Path(__file__).resolve().parents[1]
+if str(PACKAGE_ROOT) not in sys.path:
+    sys.path.insert(0, str(PACKAGE_ROOT))
+
+pytest_spec = importlib.util.find_spec("pytest")
+if pytest_spec is not None:
     import pytest
-except ImportError:  # pragma: no cover - manual KiCad usage may not have pytest installed
+else:  # pragma: no cover - manual KiCad usage may not have pytest installed
     pytest = None  # type: ignore
 
 try:
@@ -24,24 +29,8 @@ BOARD_PATH = FIXTURE_DIR / 'test_board.kicad_pcb'
 EXPECTED_BOM_PATH = FIXTURE_DIR / 'expected_bom_jlcpcb.csv'
 EXPECTED_CPL_PATH = FIXTURE_DIR / 'expected_cpl_jlcpcb.csv'
 
-if str(BASE_DIR) not in sys.path:
-    sys.path.insert(0, str(BASE_DIR))
+from bomkit_fab import board_adapter, bom_exporter, cpl_exporter, field_resolver, rotations
 
-
-def _load_module(module_name: str, path: Path):
-    spec = importlib.util.spec_from_file_location(module_name, path)
-    module = importlib.util.module_from_spec(spec)
-    assert spec is not None and spec.loader is not None
-    sys.modules[module_name] = module
-    spec.loader.exec_module(module)
-    return module
-
-
-board_adapter = _load_module('board_adapter_task12_manual', BASE_DIR / 'board_adapter.py')
-field_resolver = _load_module('field_resolver_task12_manual', BASE_DIR / 'field_resolver.py')
-bom_exporter = _load_module('bom_exporter_task12_manual', BASE_DIR / 'bom_exporter.py')
-cpl_exporter = _load_module('cpl_exporter_task12_manual', BASE_DIR / 'cpl_exporter.py')
-rotations = _load_module('rotations_task12_manual', BASE_DIR / 'rotations.py')
 
 
 def _read_csv_rows(path: Path) -> list[list[str]]:

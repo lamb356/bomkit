@@ -4,10 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-try:
-    from .sexp_parser import parse_kicad_pcb
-except ImportError:
-    from sexp_parser import parse_kicad_pcb
+from bomkit_fab.sexp_parser import parse_kicad_pcb
 
 
 @dataclass(slots=True)

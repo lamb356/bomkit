@@ -1,25 +1,22 @@
 from __future__ import annotations
 
-import os
-import sys
+import importlib.util
 from pathlib import Path
 from typing import Any
 
-MODULE_DIR = Path(__file__).resolve().parent
-UI_DIR = MODULE_DIR / "ui"
-for _path in (MODULE_DIR, UI_DIR):
-    path_text = str(_path)
-    if path_text not in sys.path:
-        sys.path.insert(0, path_text)
+PACKAGE_DIR = Path(__file__).resolve().parent
+PLUGIN_ROOT = PACKAGE_DIR.parent
 
 PCBNEW_AVAILABLE = False
 PCBNEW_IMPORT_ERROR: Exception | None = None
 
-try:
+pcbnew_spec = importlib.util.find_spec("pcbnew")
+if pcbnew_spec is not None:
     import pcbnew  # type: ignore
 
     PCBNEW_AVAILABLE = hasattr(pcbnew, "ActionPlugin")
-except Exception as exc:  # pragma: no cover - exercised outside KiCad
+else:  # pragma: no cover - exercised outside KiCad
+    exc = ModuleNotFoundError("pcbnew")
     PCBNEW_IMPORT_ERROR = exc
 
     class _FallbackActionPlugin:
@@ -39,18 +36,13 @@ except Exception as exc:  # pragma: no cover - exercised outside KiCad
 
     pcbnew = _FallbackPcbnew()  # type: ignore
 
-try:
-    from .board_adapter import load_from_pcbnew
-    from .rotations import load_rotation_database
-    from .ui.main_dialog import BOMKitDialog
-except ImportError:  # pragma: no cover - direct file import fallback
-    from board_adapter import load_from_pcbnew
-    from rotations import load_rotation_database
-    from ui.main_dialog import BOMKitDialog
+from bomkit_fab.board_adapter import load_from_pcbnew
+from bomkit_fab.rotations import load_rotation_database
+from bomkit_fab.ui.main_dialog import BOMKitDialog
 
 
-DEFAULT_ICON = os.path.join(os.path.dirname(__file__), "icon.png")
-DEFAULT_ROTATIONS = MODULE_DIR / "rotations.csv"
+DEFAULT_ICON = str(PLUGIN_ROOT / "icon.png")
+DEFAULT_ROTATIONS = PLUGIN_ROOT / "rotations.csv"
 
 
 def _board_path_from_board(board: Any) -> Path | None:

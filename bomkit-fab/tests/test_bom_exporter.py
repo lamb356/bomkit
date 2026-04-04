@@ -1,27 +1,11 @@
 from __future__ import annotations
 
 import csv
-import importlib.util
-import sys
 from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parents[1]
+from bomkit_fab import board_adapter, bom_exporter
+
 FIXTURE_PATH = Path(__file__).resolve().parent / 'fixtures' / 'test_board.kicad_pcb'
-if str(BASE_DIR) not in sys.path:
-    sys.path.insert(0, str(BASE_DIR))
-
-
-def _load_module(module_name: str, path: Path):
-    spec = importlib.util.spec_from_file_location(module_name, path)
-    module = importlib.util.module_from_spec(spec)
-    assert spec is not None and spec.loader is not None
-    sys.modules[module_name] = module
-    spec.loader.exec_module(module)
-    return module
-
-
-board_adapter = _load_module('board_adapter_task5', BASE_DIR / 'board_adapter.py')
-bom_exporter = _load_module('bom_exporter_task5', BASE_DIR / 'bom_exporter.py')
 
 
 def test_export_bom_groups_components_and_writes_csv(tmp_path):

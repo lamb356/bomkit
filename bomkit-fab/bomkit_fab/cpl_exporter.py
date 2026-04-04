@@ -4,12 +4,8 @@ import csv
 from dataclasses import dataclass
 from pathlib import Path
 
-try:
-    from .board_adapter import ComponentData
-    from .rotations import RotationRule, apply_mirror, get_rotation_offset
-except ImportError:  # pragma: no cover
-    from board_adapter import ComponentData
-    from rotations import RotationRule, apply_mirror, get_rotation_offset
+from bomkit_fab.board_adapter import ComponentData
+from bomkit_fab.rotations import RotationRule, apply_mirror, get_rotation_offset
 
 
 @dataclass(slots=True)

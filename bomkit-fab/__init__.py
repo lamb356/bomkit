@@ -1,17 +1,13 @@
 from __future__ import annotations
 
+import os
 import sys
-from pathlib import Path
 
-MODULE_DIR = Path(__file__).resolve().parent
-path_text = str(MODULE_DIR)
-if path_text not in sys.path:
-    sys.path.insert(0, path_text)
+plugin_dir = os.path.dirname(os.path.abspath(__file__))
+if plugin_dir not in sys.path:
+    sys.path.insert(0, plugin_dir)
 
-try:
-    from .plugin import BOMKitFab, PCBNEW_AVAILABLE, register_plugin
-except ImportError:  # pragma: no cover - direct file import fallback
-    from plugin import BOMKitFab, PCBNEW_AVAILABLE, register_plugin
+from bomkit_fab.plugin import BOMKitFab, PCBNEW_AVAILABLE, register_plugin
 
 REGISTERED_PLUGIN = None
 try:

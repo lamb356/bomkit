@@ -1,24 +1,10 @@
 from __future__ import annotations
 
-import importlib.util
-import sys
 from pathlib import Path
 
+from bomkit_fab import rotations
+
 BASE_DIR = Path(__file__).resolve().parents[1]
-if str(BASE_DIR) not in sys.path:
-    sys.path.insert(0, str(BASE_DIR))
-
-
-def _load_module(module_name: str, path: Path):
-    spec = importlib.util.spec_from_file_location(module_name, path)
-    module = importlib.util.module_from_spec(spec)
-    assert spec is not None and spec.loader is not None
-    sys.modules[module_name] = module
-    spec.loader.exec_module(module)
-    return module
-
-
-rotations = _load_module('rotations_task4', BASE_DIR / 'rotations.py')
 
 
 def test_load_rotations_reads_default_database():

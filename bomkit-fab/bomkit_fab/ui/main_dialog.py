@@ -5,10 +5,13 @@ from pathlib import Path
 from typing import Any
 import webbrowser
 
-try:
+import importlib.util
+
+wx_spec = importlib.util.find_spec("wx")
+if wx_spec is not None:
     import wx  # type: ignore
     WX_AVAILABLE = True
-except ImportError:  # pragma: no cover
+else:  # pragma: no cover
     WX_AVAILABLE = False
 
     class _WxObject:
@@ -77,32 +80,18 @@ except ImportError:  # pragma: no cover
 
     wx = _WxModule()  # type: ignore
 
-try:
-    from ..bom_exporter import BOMLine, export_bom
-    from ..cost_estimator import estimate_loading_fees
-    from ..cpl_exporter import export_cpl
-    from ..field_resolver import resolve_lcsc
-    from .parts_table import (
-        PartsTable,
-        STATUS_ALL,
-        STATUS_DNP,
-        STATUS_RESOLVED,
-        STATUS_UNRESOLVED,
-        build_parts_table_rows,
-    )
-except ImportError:  # pragma: no cover
-    from bom_exporter import BOMLine, export_bom
-    from cost_estimator import estimate_loading_fees
-    from cpl_exporter import export_cpl
-    from field_resolver import resolve_lcsc
-    from parts_table import (
-        PartsTable,
-        STATUS_ALL,
-        STATUS_DNP,
-        STATUS_RESOLVED,
-        STATUS_UNRESOLVED,
-        build_parts_table_rows,
-    )
+from bomkit_fab.bom_exporter import BOMLine, export_bom
+from bomkit_fab.cost_estimator import estimate_loading_fees
+from bomkit_fab.cpl_exporter import export_cpl
+from bomkit_fab.field_resolver import resolve_lcsc
+from bomkit_fab.ui.parts_table import (
+    PartsTable,
+    STATUS_ALL,
+    STATUS_DNP,
+    STATUS_RESOLVED,
+    STATUS_UNRESOLVED,
+    build_parts_table_rows,
+)
 
 
 @dataclass(slots=True)

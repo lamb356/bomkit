@@ -1,30 +1,7 @@
 from __future__ import annotations
 
-import importlib.util
-import sys
-from pathlib import Path
-
-
-BASE_DIR = Path(__file__).resolve().parents[1]
-UI_DIR = BASE_DIR / "ui"
-if str(BASE_DIR) not in sys.path:
-    sys.path.insert(0, str(BASE_DIR))
-if str(UI_DIR) not in sys.path:
-    sys.path.insert(0, str(UI_DIR))
-
-
-def _load_module(module_name: str, path: Path):
-    spec = importlib.util.spec_from_file_location(module_name, path)
-    module = importlib.util.module_from_spec(spec)
-    assert spec is not None and spec.loader is not None
-    sys.modules[module_name] = module
-    spec.loader.exec_module(module)
-    return module
-
-
-board_adapter = _load_module("board_adapter_task8", BASE_DIR / "board_adapter.py")
-parts_table = _load_module("parts_table_task8", UI_DIR / "parts_table.py")
-main_dialog = _load_module("main_dialog_task8", UI_DIR / "main_dialog.py")
+from bomkit_fab import board_adapter
+from bomkit_fab.ui import main_dialog, parts_table
 
 
 def test_ui_modules_import_without_wx_and_can_build_rows_and_summary(tmp_path):

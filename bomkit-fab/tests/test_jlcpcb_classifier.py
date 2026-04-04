@@ -1,29 +1,6 @@
 from __future__ import annotations
 
-import importlib.util
-import sys
-from pathlib import Path
-
-
-BASE_DIR = Path(__file__).resolve().parents[1]
-if str(BASE_DIR) not in sys.path:
-    sys.path.insert(0, str(BASE_DIR))
-
-
-def _load_module(module_name: str, path: Path):
-    spec = importlib.util.spec_from_file_location(module_name, path)
-    module = importlib.util.module_from_spec(spec)
-    assert spec is not None and spec.loader is not None
-    sys.modules[module_name] = module
-    spec.loader.exec_module(module)
-    return module
-
-
-board_adapter = _load_module("board_adapter", BASE_DIR / "board_adapter.py")
-bom_exporter = _load_module("bom_exporter", BASE_DIR / "bom_exporter.py")
-jlcpcb_classifier = _load_module("jlcpcb_classifier", BASE_DIR / "jlcpcb_classifier.py")
-cost_estimator = _load_module("cost_estimator", BASE_DIR / "cost_estimator.py")
-
+from bomkit_fab import bom_exporter, cost_estimator, jlcpcb_classifier
 
 BOMLine = bom_exporter.BOMLine
 

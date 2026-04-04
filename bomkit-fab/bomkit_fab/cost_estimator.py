@@ -3,12 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-try:
-    from .bom_exporter import BOMLine
-    from .jlcpcb_classifier import JLCPCBPart, classify
-except ImportError:  # pragma: no cover
-    from bom_exporter import BOMLine
-    from jlcpcb_classifier import JLCPCBPart, classify
+from bomkit_fab.bom_exporter import BOMLine
+from bomkit_fab.jlcpcb_classifier import JLCPCBPart, classify
 
 
 EXTENDED_LOADING_FEE_USD = 3.0
