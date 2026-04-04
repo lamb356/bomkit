@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 import { AuthRequiredError } from '@/lib/auth';
 import { getCurrentBillingState, projectLimitForTier, rowLimitForTier } from '@/lib/billing';
-import { getOwnedProject, importBomCsv, parseInputCsv, ProjectLimitError } from '@/lib/bom/import';
+import { getOwnedProject, importBomCsv, parseInputCsv, ProjectLimitError, RowLimitError } from '@/lib/bom/import';
 
 export async function POST(request: Request) {
   try {
@@ -37,6 +37,7 @@ export async function POST(request: Request) {
       filename: file.name,
       existingProjectId: existingProjectId ? Number(existingProjectId) : undefined,
       maxProjects: projectLimitForTier(tier),
+      maxRows,
     });
 
     return NextResponse.json({ ...result, billingTier: tier });
@@ -44,7 +45,7 @@ export async function POST(request: Request) {
     if (error instanceof AuthRequiredError) {
       return NextResponse.json({ error: error.message }, { status: 401 });
     }
-    if (error instanceof ProjectLimitError) {
+    if (error instanceof ProjectLimitError || error instanceof RowLimitError) {
       return NextResponse.json({ error: error.message }, { status: 403 });
     }
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Import failed' }, { status: 500 });

@@ -36,6 +36,13 @@ export class ProjectLimitError extends Error {
   }
 }
 
+export class RowLimitError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'RowLimitError';
+  }
+}
+
 async function loadClassifications() {
   const cachedParts = await db.select().from(jlcPartsCache);
   return new Map(cachedParts.map((row) => [row.lcscPart, {
@@ -104,8 +111,12 @@ export async function importBomCsv(params: {
   filename: string;
   existingProjectId?: number;
   maxProjects?: number | null;
+  maxRows?: number | null;
 }): Promise<{ projectId: number; revisionId: number; version: number; diffSummary: { added: number; removed: number; changed: number } }> {
   const parsedRows = await parseInputCsv(params.input);
+  if (params.maxRows != null && parsedRows.length > params.maxRows) {
+    throw new RowLimitError(`Free tier supports up to ${params.maxRows} BOM rows. Upgrade to Solo for larger imports.`);
+  }
   let project = params.existingProjectId ? await getOwnedProject(params.userId, params.existingProjectId) : null;
 
   if (!project) {
