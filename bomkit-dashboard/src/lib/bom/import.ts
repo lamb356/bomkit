@@ -1,9 +1,9 @@
-import { desc, eq, inArray } from 'drizzle-orm';
+import { and, desc, eq, inArray } from 'drizzle-orm';
 
-import { detectFormat, parseBomkitCsv, parseKicadCsv, type ParsedBOMRow } from '@/lib/parsers';
 import { classifyJlcPart } from '@/lib/jlc/classifier';
 import { db } from '@/lib/db/client';
 import { bomRevisions, bomRows, jlcPartsCache, localOffers, lockedChoices, projects } from '@/lib/db/schema';
+import { detectFormat, parseBomkitCsv, parseKicadCsv, type ParsedBOMRow } from '@/lib/parsers';
 
 import { carryForwardLockedChoices } from './carry-forward';
 import { diffRows, type DiffableRow } from './diff';
@@ -39,12 +39,17 @@ async function loadClassifications() {
   }]));
 }
 
+export async function getOwnedProject(userId: string, projectId: number) {
+  return db.query.projects.findFirst({
+    where: and(eq(projects.id, projectId), eq(projects.userId, userId)),
+  });
+}
+
 async function loadHistoricalRows(revisionId: number): Promise<HistoricalRow[]> {
   const prevDbRows = await db.select().from(bomRows).where(eq(bomRows.revisionId, revisionId));
   const rowIds = prevDbRows.map((row) => row.id);
   const prevLocks = rowIds.length > 0
-    ? await db.select().from(lockedChoices)
-      .where(inArray(lockedChoices.rowId, rowIds))
+    ? await db.select().from(lockedChoices).where(inArray(lockedChoices.rowId, rowIds))
     : [];
 
   const lockMap = new Map(prevLocks.map((row) => [row.rowId, row]));
@@ -69,21 +74,21 @@ export async function importBomCsv(params: {
   existingProjectId?: number;
 }): Promise<{ projectId: number; revisionId: number; version: number; diffSummary: { added: number; removed: number; changed: number } }> {
   const parsedRows = await parseInputCsv(params.input);
-  let projectId = params.existingProjectId;
+  let project = params.existingProjectId ? await getOwnedProject(params.userId, params.existingProjectId) : null;
 
-  if (!projectId) {
-    const inserted = await db.insert(projects).values({ userId: params.userId, name: params.projectName }).returning({ id: projects.id });
-    projectId = inserted[0]!.id;
+  if (!project) {
+    const inserted = await db.insert(projects).values({ userId: params.userId, name: params.projectName }).returning();
+    project = inserted[0]!;
   }
 
   const latestRevision = await db.query.bomRevisions.findFirst({
-    where: eq(bomRevisions.projectId, projectId),
+    where: eq(bomRevisions.projectId, project.id),
     orderBy: desc(bomRevisions.version),
   });
 
   const version = (latestRevision?.version ?? 0) + 1;
   const revisionInsert = await db.insert(bomRevisions).values({
-    projectId,
+    projectId: project.id,
     version,
     importedAt: new Date(),
     sourceFormat: detectFormat(params.input),
@@ -93,7 +98,6 @@ export async function importBomCsv(params: {
   const revisionId = revisionInsert[0]!.id;
 
   const partsDb = await loadClassifications();
-
   const previousRows = latestRevision ? await loadHistoricalRows(latestRevision.id) : [];
   const carryRows = carryForwardLockedChoices(parsedRows.map((row) => ({ ...row, lockedChoice: null })), previousRows);
   const enrichedRows = carryRows.map((row) => {
@@ -150,7 +154,7 @@ export async function importBomCsv(params: {
   }
 
   return {
-    projectId,
+    projectId: project.id,
     revisionId,
     version,
     diffSummary: {
@@ -163,8 +167,13 @@ export async function importBomCsv(params: {
 
 async function buildRowsForRevision(revisionId: number): Promise<SnapshotRow[]> {
   const rows = await db.select().from(bomRows).where(eq(bomRows.revisionId, revisionId));
-  const offers = await db.select({ offer: localOffers, rowId: localOffers.rowId }).from(localOffers);
-  const locks = await db.select({ lock: lockedChoices, rowId: lockedChoices.rowId }).from(lockedChoices);
+  const rowIds = rows.map((row) => row.id);
+  const offers = rowIds.length > 0
+    ? await db.select({ offer: localOffers, rowId: localOffers.rowId }).from(localOffers).where(inArray(localOffers.rowId, rowIds))
+    : [];
+  const locks = rowIds.length > 0
+    ? await db.select({ lock: lockedChoices, rowId: lockedChoices.rowId }).from(lockedChoices).where(inArray(lockedChoices.rowId, rowIds))
+    : [];
 
   const offersByRow = new Map<number, typeof offers[number]['offer'][]>();
   for (const item of offers) {
@@ -172,9 +181,7 @@ async function buildRowsForRevision(revisionId: number): Promise<SnapshotRow[]> 
   }
 
   const locksByRow = new Map<number, typeof locks[number]['lock']>();
-  for (const item of locks) {
-    locksByRow.set(item.rowId, item.lock);
-  }
+  for (const item of locks) locksByRow.set(item.rowId, item.lock);
 
   return rows.map((row) => ({
     ...row,
@@ -183,8 +190,8 @@ async function buildRowsForRevision(revisionId: number): Promise<SnapshotRow[]> 
   }));
 }
 
-export async function getProjectSnapshot(projectId: number) {
-  const project = await db.query.projects.findFirst({ where: eq(projects.id, projectId) });
+export async function getOwnedProjectSnapshot(userId: string, projectId: number) {
+  const project = await getOwnedProject(userId, projectId);
   if (!project) return null;
 
   const revisions = await db.query.bomRevisions.findMany({

@@ -1,10 +1,23 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 
 import { BillingActions } from '@/components/BillingActions';
+import { getCurrentUser } from '@/lib/auth';
 import { getCurrentBillingState, getPriceIdForTier } from '@/lib/billing';
+import { getOwnedProject } from '@/lib/bom/import';
 
 export default async function ProjectSettingsPage({ params }: { params: Promise<{ projectId: string }> }) {
+  const currentUser = await getCurrentUser();
+  if (!currentUser) {
+    redirect('/api/auth/signin');
+  }
+
   const { projectId } = await params;
+  const project = await getOwnedProject(currentUser.id, Number(projectId));
+  if (!project) {
+    redirect('/dashboard');
+  }
+
   const { user, tier } = await getCurrentBillingState();
 
   return (
@@ -14,9 +27,9 @@ export default async function ProjectSettingsPage({ params }: { params: Promise<
           <div className="flex items-start justify-between gap-4">
             <div>
               <h1 className="text-2xl font-semibold text-zinc-950">Project settings</h1>
-              <p className="mt-2 text-sm text-zinc-600">Project {projectId}. Billing, plan management, and export entitlements live here.</p>
+              <p className="mt-2 text-sm text-zinc-600">Project {project.name}. Billing, plan management, and export entitlements live here.</p>
             </div>
-            <Link href={`/dashboard/${projectId}`} className="rounded-xl border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700">Back to project</Link>
+            <Link href={`/dashboard/${project.id}`} className="rounded-xl border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700">Back to project</Link>
           </div>
         </div>
 

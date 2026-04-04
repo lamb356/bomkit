@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 
+import { AuthRequiredError } from '@/lib/auth';
 import { ensureStripeCustomer, getStripe } from '@/lib/billing';
 
 export async function POST() {
@@ -13,6 +14,9 @@ export async function POST() {
     });
     return NextResponse.json({ url: session.url });
   } catch (error) {
+    if (error instanceof AuthRequiredError) {
+      return NextResponse.json({ error: error.message }, { status: 401 });
+    }
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Unable to open billing portal' }, { status: 500 });
   }
 }

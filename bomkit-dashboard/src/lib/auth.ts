@@ -23,6 +23,13 @@ function hydrateEnvFromLocalFile(): void {
 
 hydrateEnvFromLocalFile();
 
+export class AuthRequiredError extends Error {
+  constructor(message = 'Authentication required') {
+    super(message);
+    this.name = 'AuthRequiredError';
+  }
+}
+
 export const authOptions: NextAuthOptions = {
   session: { strategy: 'jwt' },
   providers: [
@@ -48,7 +55,11 @@ export interface CurrentUser {
   image: string | null;
 }
 
-export async function getCurrentUser(): Promise<CurrentUser> {
+function isDemoModeEnabled(): boolean {
+  return process.env.DEMO_MODE === 'true' && process.env.NODE_ENV !== 'production';
+}
+
+export async function getCurrentUser(): Promise<CurrentUser | null> {
   const session = await getServerSession(authOptions);
   const sessionUser = session?.user as { id?: string; email?: string | null; name?: string | null; image?: string | null } | undefined;
   if (sessionUser?.id) {
@@ -60,6 +71,10 @@ export async function getCurrentUser(): Promise<CurrentUser> {
     };
   }
 
+  if (!isDemoModeEnabled()) {
+    return null;
+  }
+
   return {
     id: process.env.DEMO_USER_ID || 'local-demo-user',
     email: process.env.DEMO_USER_EMAIL || 'local-demo-user@local.demo',
@@ -68,6 +83,14 @@ export async function getCurrentUser(): Promise<CurrentUser> {
   };
 }
 
+export async function requireCurrentUser(): Promise<CurrentUser> {
+  const user = await getCurrentUser();
+  if (!user) {
+    throw new AuthRequiredError();
+  }
+  return user;
+}
+
 export async function getCurrentUserId(): Promise<string> {
-  return (await getCurrentUser()).id;
+  return (await requireCurrentUser()).id;
 }

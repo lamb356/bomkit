@@ -4,7 +4,7 @@ import path from 'node:path';
 import { eq } from 'drizzle-orm';
 import Stripe from 'stripe';
 
-import { getCurrentUser } from '@/lib/auth';
+import { requireCurrentUser } from '@/lib/auth';
 import { db } from '@/lib/db/client';
 import { users } from '@/lib/db/schema';
 
@@ -48,7 +48,7 @@ export function tierFromPriceId(priceId: string | null | undefined): BillingTier
 }
 
 export async function ensureCurrentUserRecord() {
-  const currentUser = await getCurrentUser();
+  const currentUser = await requireCurrentUser();
   const email = currentUser.email || `${currentUser.id}@local.demo`;
   const existing = await db.query.users.findFirst({ where: eq(users.id, currentUser.id) });
 
@@ -116,8 +116,7 @@ export async function setUserBillingState(params: {
   let targetUser = params.userId ? await db.query.users.findFirst({ where: eq(users.id, params.userId) }) : null;
 
   if (!targetUser && params.stripeCustomerId) {
-    const allUsers = await db.select().from(users);
-    targetUser = allUsers.find((candidate) => candidate.stripeCustomerId === params.stripeCustomerId) ?? null;
+    targetUser = await db.query.users.findFirst({ where: eq(users.stripeCustomerId, params.stripeCustomerId) });
   }
 
   if (!targetUser) return null;

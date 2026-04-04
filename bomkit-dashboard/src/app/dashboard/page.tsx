@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import { eq } from 'drizzle-orm';
+import { redirect } from 'next/navigation';
 
 import { ProjectCard } from '@/components/ProjectCard';
+import { getCurrentUser } from '@/lib/auth';
 import { getCurrentBillingState } from '@/lib/billing';
 import { db } from '@/lib/db/client';
 import { projects } from '@/lib/db/schema';
@@ -13,6 +15,11 @@ function tierCopy(tier: string): string {
 }
 
 export default async function DashboardProjectsPage({ searchParams }: { searchParams?: Promise<{ checkout?: string }> }) {
+  const currentUser = await getCurrentUser();
+  if (!currentUser) {
+    redirect('/api/auth/signin');
+  }
+
   const { user, tier } = await getCurrentBillingState();
   const items = await db.select().from(projects).where(eq(projects.userId, user.id));
   const params = (await searchParams) ?? {};
@@ -31,9 +38,7 @@ export default async function DashboardProjectsPage({ searchParams }: { searchPa
           </div>
           <div className="flex flex-wrap gap-2 text-sm">
             <Link href="/" className="rounded-xl border border-zinc-300 bg-white px-4 py-2 font-medium text-zinc-700">Import another BOM</Link>
-            <form action="/dashboard/1/settings" className="contents">
-              <Link href={items[0] ? `/dashboard/${items[0].id}/settings` : '/dashboard'} className="rounded-xl bg-zinc-900 px-4 py-2 font-medium text-white">Billing & settings</Link>
-            </form>
+            <Link href={items[0] ? `/dashboard/${items[0].id}/settings` : '/dashboard'} className="rounded-xl bg-zinc-900 px-4 py-2 font-medium text-white">Billing & settings</Link>
           </div>
         </div>
 

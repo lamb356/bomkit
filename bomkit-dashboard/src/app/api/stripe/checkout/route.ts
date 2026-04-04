@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 
+import { AuthRequiredError } from '@/lib/auth';
 import { ensureStripeCustomer, getPriceIdForTier, getStripe, type BillingTier } from '@/lib/billing';
 
 export async function POST(request: Request) {
@@ -10,7 +11,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'tier must be solo or pro' }, { status: 400 });
     }
 
-    const priceId = body.priceId || getPriceIdForTier(requestedTier);
+    const priceId = getPriceIdForTier(requestedTier);
     if (!priceId) {
       return NextResponse.json({ error: `No Stripe price configured for ${requestedTier}` }, { status: 500 });
     }
@@ -31,6 +32,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ url: session.url });
   } catch (error) {
+    if (error instanceof AuthRequiredError) {
+      return NextResponse.json({ error: error.message }, { status: 401 });
+    }
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Checkout failed' }, { status: 500 });
   }
 }
