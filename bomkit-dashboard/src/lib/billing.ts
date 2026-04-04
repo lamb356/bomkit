@@ -1,37 +1,17 @@
-import fs from 'node:fs';
-import path from 'node:path';
-
 import { eq } from 'drizzle-orm';
 import Stripe from 'stripe';
 
 import { requireCurrentUser } from '@/lib/auth';
 import { db } from '@/lib/db/client';
 import { users } from '@/lib/db/schema';
+import { ensureEnvLoaded, requireEnv } from '@/lib/env';
 
 export type BillingTier = 'free' | 'solo' | 'pro';
 
-function hydrateEnvFromLocalFile(): void {
-  const envPath = path.join(process.cwd(), '.env.local');
-  if (!fs.existsSync(envPath)) return;
-  const text = fs.readFileSync(envPath, 'utf-8');
-  for (const rawLine of text.split(/\r?\n/)) {
-    const line = rawLine.trim();
-    if (!line || line.startsWith('#') || !line.includes('=')) continue;
-    const eqIndex = line.indexOf('=');
-    const key = line.slice(0, eqIndex);
-    if (process.env[key]) continue;
-    process.env[key] = line.slice(eqIndex + 1).trim();
-  }
-}
-
-hydrateEnvFromLocalFile();
+ensureEnvLoaded();
 
 export function getStripe(): Stripe {
-  const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-  if (!stripeSecretKey) {
-    throw new Error('STRIPE_SECRET_KEY is not configured');
-  }
-  return new Stripe(stripeSecretKey);
+  return new Stripe(requireEnv('STRIPE_SECRET_KEY'));
 }
 
 export function getPriceIdForTier(tier: BillingTier): string | null {
@@ -121,12 +101,20 @@ export async function setUserBillingState(params: {
 
   if (!targetUser) return null;
 
-  await db.update(users).set({
+  const update: Partial<typeof users.$inferInsert> = {
     billingTier: params.billingTier,
-    stripeCustomerId: params.stripeCustomerId ?? targetUser.stripeCustomerId,
-    stripeSubscriptionId: params.stripeSubscriptionId ?? targetUser.stripeSubscriptionId,
     updatedAt: new Date(),
-  }).where(eq(users.id, targetUser.id));
+  };
+
+  if ('stripeCustomerId' in params) {
+    update.stripeCustomerId = params.stripeCustomerId ?? null;
+  }
+
+  if ('stripeSubscriptionId' in params) {
+    update.stripeSubscriptionId = params.stripeSubscriptionId ?? null;
+  }
+
+  await db.update(users).set(update).where(eq(users.id, targetUser.id));
 
   return targetUser.id;
 }

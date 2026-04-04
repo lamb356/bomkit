@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 
 import { AuthRequiredError } from '@/lib/auth';
 import { ensureStripeCustomer, getPriceIdForTier, getStripe, type BillingTier } from '@/lib/billing';
+import { getAppBaseUrl } from '@/lib/env';
 
 export async function POST(request: Request) {
   try {
@@ -18,7 +19,7 @@ export async function POST(request: Request) {
 
     const stripe = getStripe();
     const { user, customerId } = await ensureStripeCustomer();
-    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+    const baseUrl = getAppBaseUrl();
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       customer: customerId,

@@ -2,12 +2,13 @@ import { NextResponse } from 'next/server';
 
 import { AuthRequiredError } from '@/lib/auth';
 import { ensureStripeCustomer, getStripe } from '@/lib/billing';
+import { getAppBaseUrl } from '@/lib/env';
 
 export async function POST() {
   try {
     const stripe = getStripe();
     const { customerId } = await ensureStripeCustomer();
-    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+    const baseUrl = getAppBaseUrl();
     const session = await stripe.billingPortal.sessions.create({
       customer: customerId,
       return_url: `${baseUrl}/dashboard`,
