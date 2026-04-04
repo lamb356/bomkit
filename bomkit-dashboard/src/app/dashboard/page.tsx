@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { ProjectCard } from '@/components/ProjectCard';
 import { getCurrentUser } from '@/lib/auth';
 import { getCurrentBillingState } from '@/lib/billing';
+import { getOwnedProjectSnapshot } from '@/lib/bom/import';
 import { db } from '@/lib/db/client';
 import { projects } from '@/lib/db/schema';
 
@@ -24,27 +25,48 @@ export default async function DashboardProjectsPage({ searchParams }: { searchPa
   const items = await db.select().from(projects).where(eq(projects.userId, user.id));
   const params = (await searchParams) ?? {};
 
+  const enriched = await Promise.all(items.map(async (project) => {
+    const snapshot = await getOwnedProjectSnapshot(user.id, project.id);
+    const rows = snapshot?.rows ?? [];
+    return {
+      ...project,
+      summary: {
+        partCount: rows.length,
+        unresolvedCount: rows.filter((row) => row.status === 'unresolved').length,
+        feeTotal: rows.reduce((sum, row) => sum + Number(row.jlcLoadingFee || 0), 0),
+      },
+    };
+  }));
+
   return (
-    <main className="min-h-screen bg-zinc-50 px-6 py-10">
-      <div className="mx-auto max-w-6xl space-y-6">
-        <div className="flex flex-col gap-4 rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <h1 className="text-3xl font-semibold text-zinc-950">BOMKit Dashboard</h1>
-            <p className="mt-2 text-zinc-600">Your saved BOM workspace with JLC fee intelligence and revision memory.</p>
-            <p className="mt-3 text-sm text-zinc-500">Signed in as {user.email}</p>
-            <div className="mt-3 inline-flex rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700">{tierCopy(tier)}</div>
-            {params.checkout === 'success' && <p className="mt-3 text-sm text-emerald-600">Checkout completed. Stripe will update your plan as soon as the webhook is configured.</p>}
-            {params.checkout === 'cancelled' && <p className="mt-3 text-sm text-amber-600">Checkout cancelled.</p>}
-          </div>
-          <div className="flex flex-wrap gap-2 text-sm">
-            <Link href="/" className="rounded-xl border border-zinc-300 bg-white px-4 py-2 font-medium text-zinc-700">Import another BOM</Link>
-            <Link href={items[0] ? `/dashboard/${items[0].id}/settings` : '/dashboard'} className="rounded-xl bg-zinc-900 px-4 py-2 font-medium text-white">Billing & settings</Link>
+    <main className="min-h-screen px-6 py-10">
+      <div className="mx-auto max-w-7xl space-y-6">
+        <div className="rounded-[32px] border border-white/10 bg-white/5 p-6 shadow-[0_30px_120px_rgba(2,6,23,0.38)] backdrop-blur-xl">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <div className="inline-flex rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan-200">Project index</div>
+              <h1 className="mt-4 text-4xl font-semibold tracking-[-0.04em] text-white">BOMKit Dashboard</h1>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-400">A revision-aware engineering workspace for KiCad BOMs, sourcing choices, and JLC loading-fee visibility.</p>
+              <p className="mt-3 text-sm text-zinc-500">Signed in as {user.email}</p>
+              <div className="mt-4 inline-flex rounded-full border border-white/10 bg-[#0f1421] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-300">{tierCopy(tier)}</div>
+              {params.checkout === 'success' && <p className="mt-3 text-sm text-emerald-300">Checkout completed. Stripe will update your plan as soon as the webhook is configured.</p>}
+              {params.checkout === 'cancelled' && <p className="mt-3 text-sm text-amber-300">Checkout cancelled.</p>}
+            </div>
+            <div className="flex flex-wrap gap-3 text-sm">
+              <Link href="/" className="rounded-2xl bg-white px-5 py-3 font-semibold text-[#0a0d14] hover:bg-cyan-100">Import another BOM</Link>
+              <Link href={enriched[0] ? `/dashboard/${enriched[0].id}/settings` : '/dashboard'} className="rounded-2xl border border-white/10 bg-white/5 px-5 py-3 font-medium text-zinc-200 hover:border-cyan-400/35 hover:bg-cyan-400/10 hover:text-white">Billing & settings</Link>
+            </div>
           </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {items.map((project) => <ProjectCard key={project.id} project={project} />)}
-          {items.length === 0 && <div className="rounded-2xl border border-dashed border-zinc-300 p-6 text-sm text-zinc-500">No projects yet. Import a CSV from the home page to create one.</div>}
+          {enriched.map((project) => <ProjectCard key={project.id} project={project} />)}
+          {enriched.length === 0 && (
+            <div className="rounded-[28px] border border-dashed border-white/15 bg-white/5 p-8 text-sm text-zinc-400 backdrop-blur-sm">
+              <div className="text-lg font-semibold text-white">No projects yet</div>
+              <p className="mt-2 max-w-sm leading-6">Import a BOMKit Fab export or KiCad CSV from the landing page to create your first persistent workspace.</p>
+            </div>
+          )}
         </div>
       </div>
     </main>

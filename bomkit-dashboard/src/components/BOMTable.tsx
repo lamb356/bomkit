@@ -52,6 +52,13 @@ function matchesQuery(row: DashboardRow, query: string): boolean {
   return haystack.includes(query.toLowerCase());
 }
 
+function rowStatusTone(status: string): string {
+  if (status === 'resolved') return 'text-emerald-300';
+  if (status === 'unresolved') return 'text-amber-300';
+  if (status === 'dnp') return 'text-zinc-400';
+  return 'text-zinc-300';
+}
+
 export function BOMTable({ projectId, initialRows }: { projectId: number; initialRows: DashboardRow[] }) {
   const [rows, setRows] = useState(initialRows);
   const [query, setQuery] = useState('');
@@ -60,6 +67,7 @@ export function BOMTable({ projectId, initialRows }: { projectId: number; initia
   const [sortKey, setSortKey] = useState<'value' | 'footprint' | 'status' | 'quantity'>('value');
   const [savingRowId, setSavingRowId] = useState<number | null>(null);
   const [expandedRowId, setExpandedRowId] = useState<number | null>(null);
+  const [tableError, setTableError] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<number, { mpn: string; lcscPart: string; userNotes: string }>>(() => Object.fromEntries(initialRows.map((row) => [row.id, {
     mpn: row.mpn ?? '',
     lcscPart: row.lcscPart ?? '',
@@ -77,6 +85,7 @@ export function BOMTable({ projectId, initialRows }: { projectId: number; initia
 
   async function patchRow(rowId: number, body: Record<string, unknown>) {
     setSavingRowId(rowId);
+    setTableError(null);
     const response = await fetch(`/api/bom/${projectId}/rows`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -85,6 +94,7 @@ export function BOMTable({ projectId, initialRows }: { projectId: number; initia
     const payload = await response.json();
     setSavingRowId(null);
     if (!response.ok) {
+      setTableError(payload.error || 'Failed to update row');
       throw new Error(payload.error || 'Failed to update row');
     }
     return payload;
@@ -154,119 +164,134 @@ export function BOMTable({ projectId, initialRows }: { projectId: number; initia
   }
 
   return (
-    <div className="rounded-2xl border border-zinc-200 bg-white shadow-sm">
-      <div className="flex flex-col gap-3 border-b border-zinc-200 p-4 md:flex-row md:items-center">
-        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search rows" className="rounded-xl border border-zinc-300 px-3 py-2 text-sm" />
-        <div className="flex gap-2 text-sm">
-          {['all', 'resolved', 'unresolved', 'dnp'].map((value) => (
-            <button key={value} onClick={() => setStatusFilter(value)} className={`rounded-full px-3 py-1 ${statusFilter === value ? 'bg-zinc-900 text-white' : 'bg-zinc-100 text-zinc-700'}`}>{value}</button>
-          ))}
+    <div className="rounded-[30px] border border-white/10 bg-white/5 shadow-[0_30px_120px_rgba(2,6,23,0.35)] backdrop-blur-xl">
+      <div className="flex flex-col gap-4 border-b border-white/10 px-5 py-4 xl:flex-row xl:items-center xl:justify-between">
+        <div>
+          <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-zinc-500">Engineering workspace</div>
+          <div className="mt-2 text-lg font-semibold text-white">Dense BOM editing surface</div>
         </div>
-        <div className="flex gap-2 text-sm">
-          {['all', 'basic', 'preferred_extended', 'extended', 'not_found', 'unknown'].map((value) => (
-            <button key={value} onClick={() => setTierFilter(value)} className={`rounded-full px-3 py-1 ${tierFilter === value ? 'bg-indigo-600 text-white' : 'bg-zinc-100 text-zinc-700'}`}>{value}</button>
-          ))}
+        <div className="flex flex-col gap-3 xl:items-end">
+          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search value, footprint, MPN, LCSC" className="w-full rounded-2xl border border-white/10 bg-[#0f1421] px-4 py-3 text-sm text-white placeholder:text-zinc-500 xl:w-80" />
+          <div className="flex flex-wrap gap-2 text-xs">
+            {['all', 'resolved', 'unresolved', 'dnp'].map((value) => (
+              <button key={value} onClick={() => setStatusFilter(value)} className={`rounded-full px-3 py-1.5 uppercase tracking-[0.18em] ${statusFilter === value ? 'bg-white text-[#0a0d14]' : 'border border-white/10 bg-white/5 text-zinc-400'}`}>{value}</button>
+            ))}
+            {['all', 'basic', 'preferred_extended', 'extended', 'not_found', 'unknown'].map((value) => (
+              <button key={value} onClick={() => setTierFilter(value)} className={`rounded-full px-3 py-1.5 uppercase tracking-[0.18em] ${tierFilter === value ? 'bg-cyan-300 text-[#0a0d14]' : 'border border-white/10 bg-white/5 text-zinc-400'}`}>{value.replace('_', ' ')}</button>
+            ))}
+            <select value={sortKey} onChange={(e) => setSortKey(e.target.value as 'value' | 'footprint' | 'status' | 'quantity')} className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 uppercase tracking-[0.18em] text-zinc-300">
+              <option value="value">value</option>
+              <option value="footprint">footprint</option>
+              <option value="status">status</option>
+              <option value="quantity">quantity</option>
+            </select>
+          </div>
         </div>
-        <select value={sortKey} onChange={(e) => setSortKey(e.target.value as 'value' | 'footprint' | 'status' | 'quantity')} className="rounded-xl border border-zinc-300 px-3 py-2 text-sm">
-          <option value="value">Sort by value</option>
-          <option value="footprint">Sort by footprint</option>
-          <option value="status">Sort by status</option>
-          <option value="quantity">Sort by quantity</option>
-        </select>
       </div>
-      <div className="max-h-[70vh] overflow-auto">
-        <table className="min-w-full divide-y divide-zinc-200 text-sm">
-          <thead className="sticky top-0 bg-zinc-50 text-left text-zinc-500">
-            <tr>
-              <th className="px-4 py-3">Ref</th>
-              <th className="px-4 py-3">Qty</th>
-              <th className="px-4 py-3">Value</th>
-              <th className="px-4 py-3">Footprint</th>
-              <th className="px-4 py-3">MPN</th>
-              <th className="px-4 py-3">LCSC#</th>
-              <th className="px-4 py-3">JLC Tier</th>
-              <th className="px-4 py-3">Fee</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-zinc-100">
-            {filtered.map((row) => {
-              const draft = drafts[row.id] ?? { mpn: row.mpn ?? '', lcscPart: row.lcscPart ?? '', userNotes: row.userNotes ?? '' };
-              const offerDraft = offerDrafts[row.id] ?? { source: 'Manual quote', unitPrice: '', currency: 'USD', moq: '', leadTimeDays: '', notes: '' };
-              const expanded = expandedRowId === row.id;
-              return (
-                <Fragment key={row.id}>
-                  <tr className="align-top">
-                    <td className="px-4 py-3 font-mono text-xs">{row.designators.join(', ')}</td>
-                    <td className="px-4 py-3">{row.quantity}</td>
-                    <td className="px-4 py-3">{row.value}</td>
-                    <td className="px-4 py-3">{row.footprint}</td>
-                    <td className="px-4 py-3">
-                      <input value={draft.mpn} onChange={(e) => setDrafts((current) => ({ ...current, [row.id]: { ...draft, mpn: e.target.value } }))} className="w-36 rounded-lg border border-zinc-300 px-2 py-1 text-xs" />
-                    </td>
-                    <td className="px-4 py-3">
-                      <input value={draft.lcscPart} onChange={(e) => setDrafts((current) => ({ ...current, [row.id]: { ...draft, lcscPart: e.target.value } }))} className="w-28 rounded-lg border border-zinc-300 px-2 py-1 text-xs" />
-                    </td>
-                    <td className="px-4 py-3"><JLCBadge tier={row.jlcTier} /></td>
-                    <td className="px-4 py-3 font-medium text-red-600">${Number(row.jlcLoadingFee || 0).toFixed(2)}</td>
-                    <td className="px-4 py-3">{row.status}</td>
-                    <td className="px-4 py-3 text-xs text-zinc-500">
-                      <div className="flex flex-col gap-2">
-                        <button onClick={() => saveDraft(row)} className="rounded-lg bg-zinc-900 px-2 py-1 text-white">{savingRowId === row.id ? 'Saving…' : 'Save'}</button>
-                        <button onClick={() => setExpandedRowId(expanded ? null : row.id)} className="rounded-lg border border-zinc-300 px-2 py-1">{expanded ? 'Hide' : 'Details'}</button>
-                        {row.lockedChoice ? (
-                          <button onClick={() => unlockRow(row.id)} className="rounded-lg border border-amber-300 bg-amber-50 px-2 py-1 text-amber-700">Unlock</button>
-                        ) : (
-                          <button onClick={() => lockRow(row)} className="rounded-lg border border-emerald-300 bg-emerald-50 px-2 py-1 text-emerald-700">Lock</button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                  {expanded && (
-                    <tr className="bg-zinc-50/80">
-                      <td colSpan={10} className="px-4 py-4">
-                        <div className="grid gap-4 lg:grid-cols-2">
-                          <div className="space-y-3 rounded-2xl border border-zinc-200 bg-white p-4">
-                            <div>
-                              <div className="text-xs font-medium uppercase tracking-wide text-zinc-500">Row notes</div>
-                              <textarea value={draft.userNotes} onChange={(e) => setDrafts((current) => ({ ...current, [row.id]: { ...draft, userNotes: e.target.value } }))} className="mt-2 min-h-24 w-full rounded-xl border border-zinc-300 px-3 py-2 text-sm" />
-                            </div>
-                            <div className="text-xs text-zinc-500">Locked choice: {row.lockedChoice ? `${row.lockedChoice.source}${row.lockedChoice.sku ? ` · ${row.lockedChoice.sku}` : ''}` : 'none'}</div>
-                          </div>
-                          <div className="space-y-3 rounded-2xl border border-zinc-200 bg-white p-4">
-                            <div className="text-xs font-medium uppercase tracking-wide text-zinc-500">Add local offer</div>
-                            <div className="grid gap-2 md:grid-cols-2">
-                              <input value={offerDraft.source} onChange={(e) => setOfferDrafts((current) => ({ ...current, [row.id]: { ...offerDraft, source: e.target.value } }))} placeholder="Source" className="rounded-xl border border-zinc-300 px-3 py-2 text-sm" />
-                              <input value={offerDraft.unitPrice} onChange={(e) => setOfferDrafts((current) => ({ ...current, [row.id]: { ...offerDraft, unitPrice: e.target.value } }))} placeholder="Unit price" className="rounded-xl border border-zinc-300 px-3 py-2 text-sm" />
-                              <input value={offerDraft.currency} onChange={(e) => setOfferDrafts((current) => ({ ...current, [row.id]: { ...offerDraft, currency: e.target.value } }))} placeholder="Currency" className="rounded-xl border border-zinc-300 px-3 py-2 text-sm" />
-                              <input value={offerDraft.moq} onChange={(e) => setOfferDrafts((current) => ({ ...current, [row.id]: { ...offerDraft, moq: e.target.value } }))} placeholder="MOQ" className="rounded-xl border border-zinc-300 px-3 py-2 text-sm" />
-                              <input value={offerDraft.leadTimeDays} onChange={(e) => setOfferDrafts((current) => ({ ...current, [row.id]: { ...offerDraft, leadTimeDays: e.target.value } }))} placeholder="Lead time (days)" className="rounded-xl border border-zinc-300 px-3 py-2 text-sm" />
-                              <input value={offerDraft.notes} onChange={(e) => setOfferDrafts((current) => ({ ...current, [row.id]: { ...offerDraft, notes: e.target.value } }))} placeholder="Notes" className="rounded-xl border border-zinc-300 px-3 py-2 text-sm" />
-                            </div>
-                            <button onClick={() => saveOffer(row)} className="rounded-xl bg-indigo-600 px-3 py-2 text-sm font-medium text-white">Add offer</button>
-                            <div className="space-y-2 text-xs text-zinc-600">
-                              {(row.offers ?? []).length === 0 && <div>No local offers yet.</div>}
-                              {(row.offers ?? []).map((offer, index) => (
-                                <div key={`${row.id}-offer-${index}`} className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2">
-                                  <span className="font-medium text-zinc-900">{offer.source}</span> · {offer.currency} {offer.unitPrice}
-                                  {offer.moq ? ` · MOQ ${offer.moq}` : ''}
-                                  {offer.leadTimeDays ? ` · ${offer.leadTimeDays}d` : ''}
-                                  {offer.notes ? ` · ${offer.notes}` : ''}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
+
+      {tableError && <div className="border-b border-red-400/20 bg-red-400/10 px-5 py-3 text-sm text-red-200">{tableError}</div>}
+      {filtered.length === 0 && (
+        <div className="px-5 py-12 text-center text-sm text-zinc-400">
+          <div className="text-lg font-semibold text-white">No rows match the current filters</div>
+          <p className="mt-2">Try clearing the search or switching JLC/status filters.</p>
+        </div>
+      )}
+
+      {filtered.length > 0 && (
+        <div className="max-h-[72vh] overflow-auto">
+          <table className="min-w-full text-sm text-zinc-200">
+            <thead className="sticky top-0 z-10 bg-[#0d1320]/95 backdrop-blur-xl text-left text-[11px] uppercase tracking-[0.2em] text-zinc-500">
+              <tr>
+                <th className="px-4 py-3">Ref</th>
+                <th className="px-4 py-3">Qty</th>
+                <th className="px-4 py-3">Value</th>
+                <th className="px-4 py-3">Footprint</th>
+                <th className="px-4 py-3">MPN</th>
+                <th className="px-4 py-3">LCSC#</th>
+                <th className="px-4 py-3">JLC tier</th>
+                <th className="px-4 py-3">Fee</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((row, index) => {
+                const draft = drafts[row.id] ?? { mpn: row.mpn ?? '', lcscPart: row.lcscPart ?? '', userNotes: row.userNotes ?? '' };
+                const offerDraft = offerDrafts[row.id] ?? { source: 'Manual quote', unitPrice: '', currency: 'USD', moq: '', leadTimeDays: '', notes: '' };
+                const expanded = expandedRowId === row.id;
+                return (
+                  <Fragment key={row.id}>
+                    <tr className={`align-top border-t border-white/5 ${index % 2 === 0 ? 'bg-white/[0.02]' : 'bg-transparent'} hover:bg-cyan-400/[0.04]`}>
+                      <td className="px-4 py-3 font-mono text-xs text-cyan-100">{row.designators.join(', ')}</td>
+                      <td className="px-4 py-3 font-mono text-xs text-zinc-300">{row.quantity}</td>
+                      <td className="px-4 py-3">{row.value}</td>
+                      <td className="px-4 py-3 font-mono text-xs text-zinc-400">{row.footprint}</td>
+                      <td className="px-4 py-3">
+                        <input value={draft.mpn} onChange={(e) => setDrafts((current) => ({ ...current, [row.id]: { ...draft, mpn: e.target.value } }))} className="w-40 rounded-xl border border-white/10 bg-[#0f1421] px-3 py-2 text-xs font-mono text-zinc-100" />
+                      </td>
+                      <td className="px-4 py-3">
+                        <input value={draft.lcscPart} onChange={(e) => setDrafts((current) => ({ ...current, [row.id]: { ...draft, lcscPart: e.target.value } }))} className="w-32 rounded-xl border border-white/10 bg-[#0f1421] px-3 py-2 text-xs font-mono text-cyan-100" />
+                      </td>
+                      <td className="px-4 py-3"><JLCBadge tier={row.jlcTier} /></td>
+                      <td className="px-4 py-3 font-mono text-sm font-semibold text-red-200">${Number(row.jlcLoadingFee || 0).toFixed(2)}</td>
+                      <td className={`px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] ${rowStatusTone(row.status)}`}>{row.status}</td>
+                      <td className="px-4 py-3 text-xs text-zinc-500">
+                        <div className="flex flex-col gap-2">
+                          <button onClick={() => saveDraft(row)} className="rounded-xl bg-white px-3 py-2 font-semibold text-[#0a0d14] disabled:opacity-60">{savingRowId === row.id ? 'Saving…' : 'Save'}</button>
+                          <button onClick={() => setExpandedRowId(expanded ? null : row.id)} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-zinc-200">{expanded ? 'Hide' : 'Details'}</button>
+                          {row.lockedChoice ? (
+                            <button onClick={() => unlockRow(row.id)} className="rounded-xl border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-amber-200">Unlock</button>
+                          ) : (
+                            <button onClick={() => lockRow(row)} className="rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-3 py-2 text-emerald-200">Lock</button>
+                          )}
                         </div>
                       </td>
                     </tr>
-                  )}
-                </Fragment>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+                    {expanded && (
+                      <tr className="bg-[#0d1320]">
+                        <td colSpan={10} className="px-4 py-4">
+                          <div className="grid gap-4 lg:grid-cols-2">
+                            <div className="space-y-3 rounded-3xl border border-white/10 bg-white/5 p-4">
+                              <div>
+                                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Row notes</div>
+                                <textarea value={draft.userNotes} onChange={(e) => setDrafts((current) => ({ ...current, [row.id]: { ...draft, userNotes: e.target.value } }))} className="mt-2 min-h-24 w-full rounded-2xl border border-white/10 bg-[#0f1421] px-3 py-3 text-sm text-zinc-100" />
+                              </div>
+                              <div className="text-xs text-zinc-500">Locked choice: {row.lockedChoice ? `${row.lockedChoice.source}${row.lockedChoice.sku ? ` · ${row.lockedChoice.sku}` : ''}` : 'none'}</div>
+                            </div>
+                            <div className="space-y-3 rounded-3xl border border-white/10 bg-white/5 p-4">
+                              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Add local offer</div>
+                              <div className="grid gap-2 md:grid-cols-2">
+                                <input value={offerDraft.source} onChange={(e) => setOfferDrafts((current) => ({ ...current, [row.id]: { ...offerDraft, source: e.target.value } }))} placeholder="Source" className="rounded-2xl border border-white/10 bg-[#0f1421] px-3 py-2 text-sm text-zinc-100" />
+                                <input value={offerDraft.unitPrice} onChange={(e) => setOfferDrafts((current) => ({ ...current, [row.id]: { ...offerDraft, unitPrice: e.target.value } }))} placeholder="Unit price" className="rounded-2xl border border-white/10 bg-[#0f1421] px-3 py-2 text-sm text-zinc-100" />
+                                <input value={offerDraft.currency} onChange={(e) => setOfferDrafts((current) => ({ ...current, [row.id]: { ...offerDraft, currency: e.target.value } }))} placeholder="Currency" className="rounded-2xl border border-white/10 bg-[#0f1421] px-3 py-2 text-sm text-zinc-100" />
+                                <input value={offerDraft.moq} onChange={(e) => setOfferDrafts((current) => ({ ...current, [row.id]: { ...offerDraft, moq: e.target.value } }))} placeholder="MOQ" className="rounded-2xl border border-white/10 bg-[#0f1421] px-3 py-2 text-sm text-zinc-100" />
+                                <input value={offerDraft.leadTimeDays} onChange={(e) => setOfferDrafts((current) => ({ ...current, [row.id]: { ...offerDraft, leadTimeDays: e.target.value } }))} placeholder="Lead time (days)" className="rounded-2xl border border-white/10 bg-[#0f1421] px-3 py-2 text-sm text-zinc-100" />
+                                <input value={offerDraft.notes} onChange={(e) => setOfferDrafts((current) => ({ ...current, [row.id]: { ...offerDraft, notes: e.target.value } }))} placeholder="Notes" className="rounded-2xl border border-white/10 bg-[#0f1421] px-3 py-2 text-sm text-zinc-100" />
+                              </div>
+                              <button onClick={() => saveOffer(row)} className="rounded-2xl bg-cyan-300 px-3 py-2 text-sm font-semibold text-[#0a0d14]">Add offer</button>
+                              <div className="space-y-2 text-xs text-zinc-400">
+                                {(row.offers ?? []).length === 0 && <div className="rounded-2xl border border-dashed border-white/10 px-3 py-3">No local offers yet.</div>}
+                                {(row.offers ?? []).map((offer, index) => (
+                                  <div key={`${row.id}-offer-${index}`} className="rounded-2xl border border-white/10 bg-[#0f1421] px-3 py-3">
+                                    <span className="font-medium text-white">{offer.source}</span> · {offer.currency} {offer.unitPrice}
+                                    {offer.moq ? ` · MOQ ${offer.moq}` : ''}
+                                    {offer.leadTimeDays ? ` · ${offer.leadTimeDays}d` : ''}
+                                    {offer.notes ? ` · ${offer.notes}` : ''}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

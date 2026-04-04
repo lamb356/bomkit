@@ -1,11 +1,20 @@
 const toneMap: Record<string, string> = {
-  basic: 'bg-emerald-100 text-emerald-700',
-  preferred_extended: 'bg-yellow-100 text-yellow-700',
-  extended: 'bg-orange-100 text-orange-700',
-  not_found: 'bg-red-100 text-red-700',
-  unknown: 'bg-zinc-200 text-zinc-700',
+  basic: 'border-emerald-400/25 bg-emerald-400/15 text-emerald-200',
+  preferred_extended: 'border-yellow-400/25 bg-yellow-400/15 text-yellow-100',
+  extended: 'border-orange-400/25 bg-orange-400/15 text-orange-100',
+  not_found: 'border-red-400/25 bg-red-400/15 text-red-100',
+  unknown: 'border-zinc-500/30 bg-zinc-500/15 text-zinc-200',
+};
+
+const labelMap: Record<string, string> = {
+  preferred_extended: 'preferred ext',
+  not_found: 'not found',
 };
 
 export function JLCBadge({ tier }: { tier: string }) {
-  return <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${toneMap[tier] ?? toneMap.unknown}`}>{tier}</span>;
+  return (
+    <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${toneMap[tier] ?? toneMap.unknown}`}>
+      {labelMap[tier] ?? tier}
+    </span>
+  );
 }
