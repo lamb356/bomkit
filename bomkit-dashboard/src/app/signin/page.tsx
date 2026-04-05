@@ -3,7 +3,7 @@ import { GitBranch, History, LockKeyhole, ShieldCheck } from 'lucide-react';
 import { getServerSession } from 'next-auth';
 import { redirect } from 'next/navigation';
 
-import { authOptions, buildSignInHref, normalizeCallbackUrl } from '@/lib/auth';
+import { authOptions, buildSignInHref, getGitHubAuthConfigurationError, isGitHubAuthConfigured, normalizeCallbackUrl } from '@/lib/auth';
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -55,6 +55,8 @@ export default async function SignInPage({ searchParams }: { searchParams: Searc
 
   const signInHref = `/api/auth/signin/github?callbackUrl=${encodeURIComponent(callbackUrl)}`;
   const errorMessage = errorCopy(firstValue(params.error));
+  const authConfigurationError = getGitHubAuthConfigurationError();
+  const githubAuthConfigured = isGitHubAuthConfigured();
 
   return (
     <main className="min-h-screen px-6 py-12 text-zinc-100">
@@ -109,13 +111,19 @@ export default async function SignInPage({ searchParams }: { searchParams: Searc
             </div>
           )}
 
-          <a
-            href={signInHref}
-            className="mt-6 inline-flex w-full items-center justify-center gap-3 rounded-2xl bg-white px-5 py-4 text-base font-semibold text-[#0a0d14] shadow-[0_24px_80px_rgba(255,255,255,0.14)] hover:bg-cyan-100"
-          >
-            <GitBranch className="h-5 w-5" />
-            Continue with GitHub
-          </a>
+          {githubAuthConfigured ? (
+            <a
+              href={signInHref}
+              className="mt-6 inline-flex w-full items-center justify-center gap-3 rounded-2xl bg-white px-5 py-4 text-base font-semibold text-[#0a0d14] shadow-[0_24px_80px_rgba(255,255,255,0.14)] hover:bg-cyan-100"
+            >
+              <GitBranch className="h-5 w-5" />
+              Continue with GitHub
+            </a>
+          ) : (
+            <div className="mt-6 rounded-2xl border border-amber-400/20 bg-amber-400/10 px-4 py-4 text-sm text-amber-100">
+              {authConfigurationError}
+            </div>
+          )}
 
           <div className="mt-4 rounded-2xl border border-white/10 bg-[#0f1421] px-4 py-4 text-sm text-zinc-400">
             <p className="font-medium text-zinc-200">Why GitHub only?</p>

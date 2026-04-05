@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 import { AuthRequiredError } from '@/lib/auth';
 import { ensureStripeCustomer, getPriceIdForTier, getStripe, type BillingTier } from '@/lib/billing';
-import { getAppBaseUrl } from '@/lib/env';
+import { getAppUrl } from '@/lib/env';
 
 export async function POST(request: Request) {
   try {
@@ -19,7 +19,6 @@ export async function POST(request: Request) {
 
     const stripe = getStripe();
     const { user, customerId } = await ensureStripeCustomer();
-    const baseUrl = getAppBaseUrl();
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       customer: customerId,
@@ -27,8 +26,8 @@ export async function POST(request: Request) {
       metadata: { userId: user.id, tier: requestedTier },
       line_items: [{ price: priceId, quantity: 1 }],
       allow_promotion_codes: true,
-      success_url: `${baseUrl}/dashboard?checkout=success`,
-      cancel_url: `${baseUrl}/dashboard?checkout=cancelled`,
+      success_url: getAppUrl('/dashboard?checkout=success'),
+      cancel_url: getAppUrl('/dashboard?checkout=cancelled'),
     });
 
     return NextResponse.json({ url: session.url });

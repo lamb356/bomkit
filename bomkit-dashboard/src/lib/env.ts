@@ -41,3 +41,7 @@ export function getAppBaseUrl(): string {
 
   return parsed.origin;
 }
+
+export function getAppUrl(pathname = '/'): string {
+  return new URL(pathname, `${getAppBaseUrl()}/`).toString();
+}

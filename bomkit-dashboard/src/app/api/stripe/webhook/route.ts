@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 
-import { getStripe, setUserBillingState, tierFromPriceId } from '@/lib/billing';
+import { getStripe } from '@/lib/billing';
+import { handleStripeWebhookEvent } from '@/lib/billing-webhook';
 import { requireEnv } from '@/lib/env';
 
 export async function POST(request: Request) {
@@ -20,34 +21,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Webhook verification failed' }, { status: 400 });
   }
 
-  if (event.type === 'checkout.session.completed') {
-    const session = event.data.object as Stripe.Checkout.Session;
-    const tier = session.metadata?.tier === 'pro' ? 'pro' : session.metadata?.tier === 'solo' ? 'solo' : 'free';
-    await setUserBillingState({
-      userId: session.client_reference_id,
-      stripeCustomerId: typeof session.customer === 'string' ? session.customer : session.customer?.id,
-      billingTier: tier,
-    });
-  }
-
-  if (event.type === 'customer.subscription.updated' || event.type === 'customer.subscription.created') {
-    const subscription = event.data.object as Stripe.Subscription;
-    const priceId = subscription.items.data[0]?.price.id;
-    await setUserBillingState({
-      stripeCustomerId: typeof subscription.customer === 'string' ? subscription.customer : subscription.customer.id,
-      stripeSubscriptionId: subscription.id,
-      billingTier: tierFromPriceId(priceId),
-    });
-  }
-
-  if (event.type === 'customer.subscription.deleted') {
-    const subscription = event.data.object as Stripe.Subscription;
-    await setUserBillingState({
-      stripeCustomerId: typeof subscription.customer === 'string' ? subscription.customer : subscription.customer.id,
-      stripeSubscriptionId: null,
-      billingTier: 'free',
-    });
-  }
+  await handleStripeWebhookEvent(event);
 
   return NextResponse.json({ received: true, type: event.type });
 }

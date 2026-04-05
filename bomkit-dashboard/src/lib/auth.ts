@@ -16,9 +16,16 @@ export class AuthRequiredError extends Error {
 const DEFAULT_CALLBACK_PATH = '/dashboard';
 const githubClientId = getOptionalEnv('GITHUB_ID');
 const githubClientSecret = getOptionalEnv('GITHUB_SECRET');
+const nextAuthSecret = getOptionalEnv('NEXTAUTH_SECRET');
 
 export function isGitHubAuthConfigured(): boolean {
   return Boolean(githubClientId && githubClientSecret);
+}
+
+export function getGitHubAuthConfigurationError(): string | null {
+  if (githubClientId && githubClientSecret) return null;
+  if (!githubClientId && !githubClientSecret) return 'GitHub sign-in is not configured for this environment.';
+  return 'GitHub sign-in is partially configured. Set both GITHUB_ID and GITHUB_SECRET.';
 }
 
 export function normalizeCallbackUrl(callbackUrl?: string | null): string {
@@ -45,6 +52,7 @@ export function buildSignInHref(callbackUrl?: string | null): string {
 }
 
 export const authOptions: NextAuthOptions = {
+  ...(nextAuthSecret ? { secret: nextAuthSecret } : {}),
   session: { strategy: 'jwt' },
   providers: isGitHubAuthConfigured()
     ? [

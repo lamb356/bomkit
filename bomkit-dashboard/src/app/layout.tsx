@@ -1,12 +1,8 @@
 import type { Metadata } from 'next';
-import { Geist_Mono, Inter } from 'next/font/google';
 import Link from 'next/link';
 
 import './globals.css';
 import { buildSignInHref } from '@/lib/auth';
-
-const inter = Inter({ variable: '--font-inter', subsets: ['latin'] });
-const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'BOMKit Dashboard',
@@ -15,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${geistMono.variable} h-full antialiased`}>
+    <html lang="en" className="h-full antialiased">
       <body className="min-h-full bg-[#0a0d14] text-zinc-100 selection:bg-cyan-400/30 selection:text-white">
         <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0a0d14]/85 backdrop-blur-xl">
           <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
