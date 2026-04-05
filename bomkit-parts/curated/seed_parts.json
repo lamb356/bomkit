@@ -1,0 +1,84 @@
+{
+  "categories": [
+    {
+      "id": "resistors",
+      "name": "Resistors",
+      "description": "Curated general-purpose SMD resistors for KiCad projects."
+    },
+    {
+      "id": "capacitors",
+      "name": "Capacitors",
+      "description": "Curated ceramic decoupling and bulk capacitors."
+    },
+    {
+      "id": "regulators",
+      "name": "Regulators",
+      "description": "Starter linear and switching regulators with proven footprints."
+    }
+  ],
+  "parts": [
+    {
+      "id": "res-10k-0402-1pct",
+      "category_id": "resistors",
+      "name": "10 kOhm 0402 1% resistor",
+      "description": "0402 thick-film pull-up and divider resistor.",
+      "manufacturer": "Yageo",
+      "mpn": "RC0402FR-0710KL",
+      "symbol": "Device:R",
+      "footprint": "Resistor_SMD:R_0402_1005Metric",
+      "parameters": {
+        "resistance": "10 kOhm",
+        "tolerance": "1%",
+        "power": "0.063 W"
+      },
+      "alternates": [
+        {
+          "manufacturer": "Panasonic",
+          "mpn": "ERJ-2RKF1002X"
+        }
+      ]
+    },
+    {
+      "id": "cap-100n-0402-x7r",
+      "category_id": "capacitors",
+      "name": "100 nF 0402 X7R capacitor",
+      "description": "General-purpose decoupling capacitor for logic rails.",
+      "manufacturer": "Murata",
+      "mpn": "GRM155R71C104KA88D",
+      "symbol": "Device:C",
+      "footprint": "Capacitor_SMD:C_0402_1005Metric",
+      "parameters": {
+        "capacitance": "100 nF",
+        "voltage": "16 V",
+        "dielectric": "X7R"
+      },
+      "alternates": [
+        {
+          "manufacturer": "Samsung",
+          "mpn": "CL05B104KO5NNNC"
+        }
+      ]
+    },
+    {
+      "id": "reg-3v3-sot23-5",
+      "category_id": "regulators",
+      "name": "3.3 V 300 mA LDO regulator",
+      "description": "Low-noise 3.3 V regulator for MCU and sensor rails.",
+      "manufacturer": "Microchip",
+      "mpn": "MCP1700T-3302E/TT",
+      "symbol": "Regulator_Linear:MCP1700-3302E_SOT23",
+      "footprint": "Package_TO_SOT_SMD:SOT-23-5",
+      "parameters": {
+        "output_voltage": "3.3 V",
+        "max_current": "300 mA",
+        "dropout": "178 mV"
+      },
+      "alternates": [
+        {
+          "manufacturer": "Diodes Incorporated",
+          "mpn": "AP2112K-3.3TRG1"
+        }
+      ]
+    }
+  ]
+}
