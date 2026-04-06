@@ -12,6 +12,14 @@ from bomkit_parts.server import resolve_get_request
 
 
 class PartsServerTest(unittest.TestCase):
+    def test_root_returns_server_info(self) -> None:
+        status, payload = resolve_get_request("/")
+
+        self.assertEqual(status, 200)
+        self.assertEqual(payload["name"], "BOMKit Parts")
+        self.assertEqual(payload["version"], "0.1.0")
+        self.assertEqual(payload["endpoints"], ["/categories", "/parts?category_id=<id>", "/parts/{id}"])
+
     def test_get_categories(self) -> None:
         status, payload = resolve_get_request("/categories")
 
