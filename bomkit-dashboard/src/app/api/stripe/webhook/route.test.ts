@@ -59,4 +59,18 @@ describe('POST /api/stripe/webhook', () => {
     expect(constructEvent).not.toHaveBeenCalled();
     expect(handleStripeWebhookEvent).not.toHaveBeenCalled();
   });
+
+  it('returns a non-200 response when webhook handling fails after verification', async () => {
+    const event = { type: 'customer.subscription.updated' };
+    constructEvent.mockReturnValue(event);
+    handleStripeWebhookEvent.mockRejectedValue(new Error('user not found for webhook update'));
+
+    const request = new Request('http://localhost/api/stripe/webhook', {
+      method: 'POST',
+      headers: { 'stripe-signature': 'sig_test' },
+      body: '{"raw":"payload"}',
+    });
+
+    await expect(POST(request)).rejects.toThrow('user not found for webhook update');
+  });
 });

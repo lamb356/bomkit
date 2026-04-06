@@ -26,8 +26,11 @@ describe('env helpers', () => {
   });
 
   it('rejects insecure production URLs', () => {
-    process.env.NEXTAUTH_URL = 'http://bomkit.dev';
-    process.env.NODE_ENV = 'production';
+    process.env = {
+      ...process.env,
+      NEXTAUTH_URL: 'http://bomkit.dev',
+      NODE_ENV: 'production',
+    };
 
     expect(() => getAppBaseUrl()).toThrow('Production app URL must use https');
   });

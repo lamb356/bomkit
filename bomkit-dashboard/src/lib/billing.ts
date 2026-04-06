@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import Stripe from 'stripe';
 
 import { requireCurrentUser } from '@/lib/auth';
@@ -9,6 +9,8 @@ import { ensureEnvLoaded, requireEnv } from '@/lib/env';
 export type BillingTier = 'free' | 'solo' | 'pro';
 
 ensureEnvLoaded();
+
+const STRIPE_CUSTOMER_LOCK_NAMESPACE = 2_001;
 
 export function getStripe(): Stripe {
   return new Stripe(requireEnv('STRIPE_SECRET_KEY'));
@@ -69,22 +71,35 @@ export async function ensureStripeCustomer() {
   const { user } = await getCurrentBillingState();
   if (user.stripeCustomerId) return { user, customerId: user.stripeCustomerId };
 
-  const stripe = getStripe();
-  const customer = await stripe.customers.create({
-    email: user.email,
-    name: user.name ?? undefined,
-    metadata: { userId: user.id },
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`select pg_advisory_xact_lock(${STRIPE_CUSTOMER_LOCK_NAMESPACE}, hashtext(${user.id}))`);
+
+    const lockedUser = await tx.query.users.findFirst({ where: eq(users.id, user.id) });
+    if (!lockedUser) {
+      throw new Error(`User ${user.id} not found while creating Stripe customer`);
+    }
+
+    if (lockedUser.stripeCustomerId) {
+      return { user: lockedUser, customerId: lockedUser.stripeCustomerId };
+    }
+
+    const stripe = getStripe();
+    const customer = await stripe.customers.create({
+      email: lockedUser.email,
+      name: lockedUser.name ?? undefined,
+      metadata: { userId: lockedUser.id },
+    });
+
+    await tx.update(users).set({
+      stripeCustomerId: customer.id,
+      updatedAt: new Date(),
+    }).where(eq(users.id, lockedUser.id));
+
+    return {
+      user: { ...lockedUser, stripeCustomerId: customer.id },
+      customerId: customer.id,
+    };
   });
-
-  await db.update(users).set({
-    stripeCustomerId: customer.id,
-    updatedAt: new Date(),
-  }).where(eq(users.id, user.id));
-
-  return {
-    user: { ...user, stripeCustomerId: customer.id },
-    customerId: customer.id,
-  };
 }
 
 export async function setUserBillingState(params: {

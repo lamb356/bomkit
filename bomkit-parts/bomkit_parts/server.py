@@ -17,6 +17,13 @@ def resolve_get_request(path: str, catalog: Catalog | None = None) -> tuple[int,
     active_catalog = catalog or Catalog.load_seed()
     parsed = urlparse(path)
 
+    if parsed.path == "/":
+        return HTTPStatus.OK, {
+            "name": "BOMKit Parts",
+            "version": "0.1.0",
+            "endpoints": ["/categories", "/parts?category_id=<id>", "/parts/{id}"],
+        }
+
     if parsed.path == "/categories":
         return HTTPStatus.OK, {"categories": active_catalog.list_categories()}
 
@@ -33,11 +40,7 @@ def resolve_get_request(path: str, catalog: Catalog | None = None) -> tuple[int,
             return HTTPStatus.NOT_FOUND, {"error": f"Unknown part: {part_id}"}
         return HTTPStatus.OK, part
 
-    return HTTPStatus.OK, {
-        "name": "BOMKit Parts",
-        "version": "0.1.0",
-        "endpoints": ["/categories", "/parts?category_id=<id>", "/parts/{id}"],
-    }
+    return HTTPStatus.NOT_FOUND, {"error": f"Unknown path: {parsed.path}"}
 
 
 class PartsRequestHandler(BaseHTTPRequestHandler):
@@ -45,8 +48,12 @@ class PartsRequestHandler(BaseHTTPRequestHandler):
     server_version = "BOMKitParts/0.1"
 
     def do_GET(self) -> None:  # noqa: N802
-        status, payload = resolve_get_request(self.path, catalog=self.catalog)
-        self._send_json(HTTPStatus(status), payload)
+        try:
+            status, payload = resolve_get_request(self.path, catalog=self.catalog)
+            self._send_json(HTTPStatus(status), payload)
+        except Exception as exc:  # pragma: no cover - exercised by HTTP-level test
+            self.log_error("Unhandled GET %s: %s", self.path, exc)
+            self._send_json(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": "Internal server error"})
 
     def log_message(self, format: str, *args: object) -> None:
         return
@@ -76,4 +83,4 @@ def serve(host: str = "127.0.0.1", port: int = 8765) -> None:
 
 
 if __name__ == "__main__":
-  serve()
+    serve()
